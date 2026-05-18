@@ -1,0 +1,22 @@
+# macOS Finder metadata
+.DS_Store
+
+# Editor / IDE state
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs
+*.log
+
+# Environment / secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# Future tooling — not used today, here so they don't accidentally land
+node_modules/
+dist/
+build/
+.netlify/
