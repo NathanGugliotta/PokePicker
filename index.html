@@ -6941,6 +6941,7 @@ function loadSavedTeam(key) {
       };
       renderResearch();
       saveResearchCurrent();
+      refreshAllAbilityFilters();
       // Spill into Capture tab — first 2 slots become Leads, next 2 become Back.
       // Clear active-game Lead/Back so user picks fresh for this match.
       const _g = getActiveGame();
@@ -6992,6 +6993,7 @@ function bindResearchSlot(idx) {
     researchTeam.slots[idx] = el.value;
     saveResearchCurrent();
     renderAnalysis();
+    applyAbilityFilterForSlot(idx);
   });
   // Nickname input
   const nickEl = document.getElementById(`r-nickname-${idx+1}`);
@@ -7251,6 +7253,7 @@ function importPokepaste() {
   }
   saveResearchCurrent();
   renderResearch();
+  refreshAllAbilityFilters();
   closeModal('modal-pokepaste');
   showToast(`Imported ${mons.length} Pokémon`);
 }
@@ -7482,6 +7485,7 @@ function useBuildFromRoster(buildId) {
   };
   saveResearchCurrent();
   renderResearch();
+  applyAbilityFilterForSlot(i);
   closeModal('modal-roster-picker');
   showToast(`Loaded: ${build.nickname || build.species} — set an item to finish`);
 }
@@ -7645,6 +7649,174 @@ function escapeAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// ============ POKÉAPI INTEGRATION (per-slot ability filtering) ============
+// Filters the Research-tab ability datalist for each slot to only the
+// abilities the entered Pokémon can actually have. Uses PokéAPI as the
+// data source, caches results in localStorage under
+// 'pokeapi-abilities-<slug>', and falls back silently to the full
+// M_A_ABILITIES list on any fetch failure or unrecognized name.
+
+// Convert an M_A_POKEMON display name to a PokéAPI slug.
+// Examples: 'Tinkaton' → 'tinkaton', 'Alolan Ninetales' → 'ninetales-alola',
+// 'Hisuian Decidueye' → 'decidueye-hisui', 'Wash Rotom' → 'rotom-wash',
+// 'Mega Charizard X' → 'charizard-mega-x', 'Mega Gengar' → 'gengar-mega',
+// 'Paldean Tauros Aqua' → 'tauros-paldea-aqua-breed',
+// 'Dusk Lycanroc' → 'lycanroc-dusk', 'Eternal Floette' → 'floette-eternal'.
+function pokemonNameToSlug(displayName) {
+  if (!displayName) return '';
+  const raw = String(displayName).trim();
+  if (!raw) return '';
+  const lower = raw.toLowerCase().replace(/[''`.]/g, '');
+
+  // Paldean Tauros (3 form variants)
+  const tauros = lower.match(/^paldean tauros (aqua|blaze|combat)$/);
+  if (tauros) return `tauros-paldea-${tauros[1]}-breed`;
+
+  // Eternal Floette / Floette-Eternal (AZ's flower)
+  if (lower === 'eternal floette' || lower === 'floette-eternal') return 'floette-eternal';
+
+  // Rotom appliances (Heat/Wash/Frost/Fan/Mow Rotom)
+  const rotomApp = lower.match(/^(heat|wash|frost|fan|mow) rotom$/);
+  if (rotomApp) return `rotom-${rotomApp[1]}`;
+
+  // Lycanroc forms (Dusk / Midnight / default = Midday)
+  if (lower === 'dusk lycanroc') return 'lycanroc-dusk';
+  if (lower === 'midnight lycanroc') return 'lycanroc-midnight';
+  if (lower === 'lycanroc') return 'lycanroc-midday';
+
+  // Regional variant prefixes (Alolan / Galarian / Hisuian)
+  const regional = lower.match(/^(alolan|galarian|hisuian)\s+(.+)$/);
+  if (regional) {
+    const region = { alolan: 'alola', galarian: 'galar', hisuian: 'hisui' }[regional[1]];
+    return regional[2].replace(/\s+/g, '-') + '-' + region;
+  }
+
+  // Mega forms ("Mega <Species> [X|Y]")
+  const mega = lower.match(/^mega (.+?)(?:\s+([xy]))?$/);
+  if (mega) {
+    const species = mega[1].replace(/\s+/g, '-');
+    return mega[2] ? `${species}-mega-${mega[2]}` : `${species}-mega`;
+  }
+
+  // Default: lowercase, strip apostrophes/periods, spaces → hyphens
+  return lower
+    .replace(/[^a-z0-9 -]+/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+// "rough-skin" → "Rough Skin"
+function formatAbilitySlug(slug) {
+  if (!slug) return '';
+  return String(slug)
+    .split('-')
+    .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '')
+    .join(' ');
+}
+
+// Fetch abilities from PokéAPI with localStorage cache.
+// Returns array of display-name strings (empty array on any failure).
+async function fetchAbilitiesForPokemon(displayName) {
+  const slug = pokemonNameToSlug(displayName);
+  if (!slug) return [];
+  const cacheKey = `pokeapi-abilities-${slug}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) { /* ignore parse errors */ }
+  try {
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${slug}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data || !Array.isArray(data.abilities)) return [];
+    const abilities = data.abilities
+      .map(a => (a && a.ability && a.ability.name) || null)
+      .filter(Boolean)
+      .map(formatAbilitySlug);
+    try { localStorage.setItem(cacheKey, JSON.stringify(abilities)); } catch (e) {}
+    return abilities;
+  } catch (e) {
+    return [];
+  }
+}
+
+// Populate a single datalist element with the full current-reg ability list.
+function renderFullAbilitiesIntoDatalist(datalistEl) {
+  if (!datalistEl) return;
+  const data = getCurrentRegData();
+  const list = (data && Array.isArray(data.abilities)) ? data.abilities : [];
+  datalistEl.innerHTML = list
+    .map(a => `<option value="${String(a).replace(/"/g, '&quot;')}"></option>`)
+    .join('');
+}
+
+// Track latest request per slot so an out-of-order resolve from a slower
+// fetch doesn't clobber a fresher one (e.g. user types Tinkaton, then
+// quickly changes to Garchomp before Tinkaton's fetch returns).
+const abilityRequestIdBySlot = [0, 0, 0, 0, 0, 0];
+
+// Filter the slot-(idx+1) ability datalist based on the species in slot idx.
+function applyAbilityFilterForSlot(idx) {
+  const dl = document.getElementById(`abilities-list-${idx + 1}`);
+  if (!dl) return;
+  const monName = ((researchTeam.slots && researchTeam.slots[idx]) || '').trim();
+  if (!monName) {
+    renderFullAbilitiesIntoDatalist(dl);
+    return;
+  }
+  // Only narrow when the typed name is a recognized canonical Pokémon —
+  // partial typing leaves the full list intact so autocomplete still works.
+  const canonical = getCanonicalNames()[normalizeName(monName)];
+  if (!canonical) {
+    renderFullAbilitiesIntoDatalist(dl);
+    return;
+  }
+  const reqId = ++abilityRequestIdBySlot[idx];
+  fetchAbilitiesForPokemon(canonical).then(abilities => {
+    if (reqId !== abilityRequestIdBySlot[idx]) return;  // stale; discard
+    if (!Array.isArray(abilities) || abilities.length === 0) {
+      renderFullAbilitiesIntoDatalist(dl);
+      return;
+    }
+    // Intersect with our reference list so the user only sees abilities the
+    // app actually knows about (PokéAPI may name some forms differently).
+    const valid = abilities.filter(a => M_A_ABILITIES.includes(a));
+    if (valid.length === 0) {
+      renderFullAbilitiesIntoDatalist(dl);
+      return;
+    }
+    dl.innerHTML = valid
+      .map(a => `<option value="${a.replace(/"/g, '&quot;')}"></option>`)
+      .join('');
+  }).catch(() => {
+    renderFullAbilitiesIntoDatalist(dl);
+  });
+}
+
+function refreshAllAbilityFilters() {
+  for (let i = 0; i < 6; i++) applyAbilityFilterForSlot(i);
+}
+
+// Create 6 per-slot ability datalists and rebind each ability input to use
+// its own. Idempotent — safe to call multiple times.
+function setupPerSlotAbilityDatalists() {
+  for (let i = 1; i <= 6; i++) {
+    let dl = document.getElementById(`abilities-list-${i}`);
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = `abilities-list-${i}`;
+      document.body.appendChild(dl);
+    }
+    renderFullAbilitiesIntoDatalist(dl);
+    const input = document.getElementById(`r-ability-${i}`);
+    if (input) input.setAttribute('list', `abilities-list-${i}`);
+  }
+}
+
 // ============ INIT ============
 function init() {
   // bind metadata
@@ -7744,6 +7916,10 @@ function init() {
 
   loadCurrent();
   loadResearchCurrent();
+  // Per-slot ability filtering: create datalists, rebind ability inputs,
+  // and fire initial filter pass for any loaded slots.
+  setupPerSlotAbilityDatalists();
+  refreshAllAbilityFilters();
 }
 
 init();
