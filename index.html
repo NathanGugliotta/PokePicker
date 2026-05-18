@@ -7733,7 +7733,7 @@ function formatAbilitySlug(slug) {
 async function fetchAbilitiesForPokemon(displayName) {
   const slug = pokemonNameToSlug(displayName);
   if (!slug) return [];
-  const cacheKey = `pokeapi-abilities-${slug}`;
+  const cacheKey = `pokeapi-abilities-v2-${slug}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -7781,13 +7781,12 @@ function applyAbilityFilterForSlot(idx) {
     renderFullAbilitiesIntoDatalist(dl);
     return;
   }
-  // Only narrow when the typed name is a recognized canonical Pokémon —
-  // partial typing leaves the full list intact so autocomplete still works.
+  // Only narrow when the typed name is a recognized canonical Pokémon.
+  // For partial / unrecognized typing, leave the datalist as-is — we don't
+  // want to thrash back to the full list on every keystroke, which would
+  // mask the filtered state once a real species is finally entered.
   const canonical = getCanonicalNames()[normalizeName(monName)];
-  if (!canonical) {
-    renderFullAbilitiesIntoDatalist(dl);
-    return;
-  }
+  if (!canonical) return;
   const reqId = ++abilityRequestIdBySlot[idx];
   fetchAbilitiesForPokemon(canonical).then(abilities => {
     if (reqId !== abilityRequestIdBySlot[idx]) return;  // stale; discard
@@ -7795,14 +7794,11 @@ function applyAbilityFilterForSlot(idx) {
       renderFullAbilitiesIntoDatalist(dl);
       return;
     }
-    // Intersect with our reference list so the user only sees abilities the
-    // app actually knows about (PokéAPI may name some forms differently).
-    const valid = abilities.filter(a => M_A_ABILITIES.includes(a));
-    if (valid.length === 0) {
-      renderFullAbilitiesIntoDatalist(dl);
-      return;
-    }
-    dl.innerHTML = valid
+    // Use PokéAPI's list directly — no M_A_ABILITIES intersection. Even if
+    // a returned name isn't in our reference list (e.g. "Unnerve"), it's
+    // still a legitimate ability the species can have. Intersecting was
+    // emptying the list silently for any species with a single name mismatch.
+    dl.innerHTML = abilities
       .map(a => `<option value="${a.replace(/"/g, '&quot;')}"></option>`)
       .join('');
   }).catch(() => {
