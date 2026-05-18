@@ -3111,7 +3111,7 @@
     <div class="mode-tab-indicator"></div>
     <button class="mode-tab active lit" data-mode="quick" onclick="setMode('quick')">⚡ Capture</button>
     <button class="mode-tab" data-mode="reflect" onclick="setMode('reflect')">🧠 Reflect</button>
-    <button class="mode-tab" data-mode="research" onclick="setMode('research')">🛡️ Research</button>
+    <button class="mode-tab" data-mode="research" onclick="setMode('research')">🛡️ My Teams</button>
   </div>
 
   <!-- ============== METADATA (Capture + Reflect only) ============== -->
@@ -5464,7 +5464,7 @@ function openPickMon(type, idx) {
       html += '<div class="picker-saved-or">— or —</div>';
       html += '<div class="logger-empty" style="margin:0;">Close this and type a name directly into the slot.</div>';
     } else {
-      html = '<div class="logger-empty">No saved teams yet.<br>Build one in the <strong>Research</strong> tab, or close this and type a name into the slot.</div>';
+      html = '<div class="logger-empty">No saved teams yet.<br>Build one in the <strong>My Teams</strong> tab, or close this and type a name into the slot.</div>';
     }
     choicesEl.innerHTML = html;
   } else {
@@ -5686,7 +5686,7 @@ function selectMyMonForLog(idx) {
   const moveEl = document.getElementById('logger-mine-moves');
   const validMoves = moves.map((m, i) => ({ name: m, i })).filter(m => m.name && m.name.trim());
   if (validMoves.length === 0) {
-    moveEl.innerHTML = '<div class="logger-empty">No moves saved for this Pokémon. Add moves in the Research tab first, or type free-text below.</div>';
+    moveEl.innerHTML = '<div class="logger-empty">No moves saved for this Pokémon. Add moves in the My Teams tab first, or type free-text below.</div>';
   } else {
     moveEl.innerHTML = validMoves.map(m =>
       `<button type="button" class="logger-choice logger-choice-mine" onclick="selectMyMoveForLog(${m.i})">${escapeHtml(m.name)}</button>`
