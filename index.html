@@ -424,6 +424,49 @@
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
+  /* === Backup / Restore modal === */
+  .backup-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 18px 0 12px;
+  }
+  .backup-actions button { padding: 12px; }
+  @media (max-width: 380px) {
+    .backup-actions { grid-template-columns: 1fr; }
+  }
+  .backup-icloud-hint {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .backup-icloud-hint strong {
+    color: var(--accent-text);
+    font-weight: 700;
+  }
+  .backup-icloud-hint em {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--accent-text);
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .backup-fine-print {
+    font-size: 10px;
+    color: var(--text-faint);
+    line-height: 1.5;
+    margin-top: 4px;
+    text-align: center;
+    font-style: italic;
+  }
+
   /* === Result toggle (glass pill segmented + sliding indicator) === */
   .result-toggle {
     position: relative;
@@ -3107,6 +3150,7 @@
     </div>
     <div class="header-actions">
       <button class="btn-ghost theme-toggle" id="theme-toggle-btn" onclick="cycleTheme()" title="Toggle theme">⚙</button>
+      <button class="btn-ghost" onclick="openBackup()" title="Backup &amp; restore via iCloud Drive">💾</button>
       <button class="btn-ghost" onclick="openDrafts()">Drafts</button>
       <button class="btn-ghost" onclick="newMatch()">New</button>
     </div>
@@ -3790,6 +3834,40 @@
       <div style="margin-top: 12px; display: flex; gap: 8px;">
         <button class="btn-ghost" onclick="copyMarkdown()" style="flex:1;">📋 Copy</button>
         <button class="btn-accent" onclick="downloadMd()" style="flex:1;">⬇ Download</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MODAL: BACKUP / RESTORE (iCloud Drive workflow) ============== -->
+<div class="modal-backdrop" id="modal-backup">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💾 Backup &amp; Restore</div>
+      <button class="btn-icon" onclick="closeModal('modal-backup')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="paste-help">
+        Bundles every draft, saved team, roster build, and your theme into a single
+        JSON file. Restore on any device — iPad, Mac, future iPhone — by importing
+        the same file. PWA-vs-Safari storage isolation goes away as soon as the
+        file is in iCloud Drive.
+      </div>
+      <div class="backup-icloud-hint">
+        <strong>iCloud Drive workflow:</strong>
+        first time, open the Files app and create a folder called
+        <em>PokePicker Backups</em> inside iCloud Drive. On <strong>Export</strong>,
+        iOS opens the Share Sheet — tap <strong>Save to Files → iCloud Drive →
+        PokePicker Backups</strong>. On <strong>Restore</strong>, the file picker
+        opens the Files app and you navigate to the same folder.
+      </div>
+      <div class="backup-actions">
+        <button class="btn-accent" onclick="exportBackup()">📤 Export Backup</button>
+        <button class="btn-ghost" onclick="importBackup()">📥 Restore Backup</button>
+      </div>
+      <div class="backup-fine-print">
+        PokéAPI ability cache is skipped (rebuildable). Restore overwrites local
+        entries with the same keys; it doesn't merge.
       </div>
     </div>
   </div>
@@ -6735,6 +6813,134 @@ function newMatch() {
   renderAll();
   saveCurrent();
   showToast('New match started');
+}
+
+// ============ BACKUP / RESTORE (manual JSON via iCloud Drive) ============
+// Bundles every app-relevant localStorage key into one JSON file. On iOS,
+// uses navigator.share() so the file lands in the system Share Sheet —
+// user routes it to Files → iCloud Drive → PokePicker Backups. Falls back
+// to a regular download on platforms without Web Share API. Import uses
+// the standard file picker which on iOS opens the Files app.
+
+const BACKUP_KEY_PATTERNS = [
+  { type: 'exact',  match: 'theme-preference' },
+  { type: 'exact',  match: 'champions-roster' },
+  { type: 'exact',  match: 'champions-team:current' },
+  { type: 'prefix', match: 'champions-team:saved-' },
+  { type: 'prefix', match: 'champions-match:' },
+];
+function keyShouldBackup(key) {
+  return BACKUP_KEY_PATTERNS.some(p =>
+    p.type === 'exact' ? key === p.match : key.startsWith(p.match)
+  );
+}
+
+function collectBackupPayload() {
+  const data = {};
+  let count = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !keyShouldBackup(key)) continue;
+    data[key] = localStorage.getItem(key);
+    count++;
+  }
+  return {
+    payload: {
+      app: 'PokePicker',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      sourceUrl: location.origin + location.pathname,
+      data,
+    },
+    count,
+  };
+}
+
+function openBackup() {
+  document.getElementById('modal-backup').classList.add('open');
+}
+
+async function exportBackup() {
+  const { payload, count } = collectBackupPayload();
+  if (count === 0) {
+    showToast('Nothing to back up yet');
+    return;
+  }
+  const filename = `pokepicker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+
+  // Prefer iOS Share Sheet — lets user route into iCloud Drive directly
+  try {
+    const file = new File([blob], filename, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: 'PokePicker Backup',
+        text: 'Save to iCloud Drive → PokePicker Backups',
+      });
+      showToast(`Shared ${count} ${count === 1 ? 'entry' : 'entries'}`);
+      return;
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;  // user cancelled the share
+    // any other error falls through to the download path
+  }
+  // Fallback: regular download (Mac Safari, Chrome desktop, etc.)
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${count} ${count === 1 ? 'entry' : 'entries'}`);
+}
+
+function importBackup() {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'application/json,.json';
+  fileInput.style.position = 'fixed';
+  fileInput.style.left = '-9999px';
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) { fileInput.remove(); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload = JSON.parse(String(reader.result));
+        if (!payload || !payload.data || typeof payload.data !== 'object') {
+          showToast('Not a valid PokePicker backup file');
+          return;
+        }
+        const keys = Object.keys(payload.data).filter(keyShouldBackup);
+        if (keys.length === 0) {
+          showToast('Backup file has no PokePicker data');
+          return;
+        }
+        const exportedAt = payload.exportedAt
+          ? new Date(payload.exportedAt).toLocaleString()
+          : 'unknown date';
+        const msg = `Restore ${keys.length} ${keys.length === 1 ? 'entry' : 'entries'} from a backup made ${exportedAt}? Existing local data with the same keys will be overwritten.`;
+        if (!confirm(msg)) return;
+        for (const k of keys) {
+          try { localStorage.setItem(k, payload.data[k]); }
+          catch (e) { console.warn('Failed to import', k, e); }
+        }
+        showToast('Backup restored — reloading…');
+        setTimeout(() => location.reload(), 600);
+      } catch (e) {
+        showToast('Invalid backup file');
+      } finally {
+        fileInput.remove();
+      }
+    };
+    reader.readAsText(file);
+  });
+  document.body.appendChild(fileInput);
+  fileInput.click();
 }
 
 // ============ TOAST ============
