@@ -424,8 +424,9 @@
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-  /* === Result toggle (glass pill segmented) === */
+  /* === Result toggle (glass pill segmented + sliding indicator) === */
   .result-toggle {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     background: var(--bg-elev);
@@ -435,8 +436,46 @@
     gap: 2px;
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    overflow: hidden;
   }
+  /* Single piece of tinted glass that slides between Win/Loss/Draw and
+     color-mixes to whichever segment it's sitting under. Same pattern
+     as .mode-tabs and .composer-tags — kept consistent across the
+     design language. */
+  .result-toggle-indicator {
+    position: absolute;
+    top: 4px; bottom: 4px; left: 4px;
+    width: calc((100% - 8px) / 3);
+    border-radius: var(--radius-pill);
+    background:
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--result-color, transparent) 60%, white) 0%,
+        var(--result-color, transparent) 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.30) inset,
+      0 -1px 0 rgba(0,0,0,0.10) inset,
+      0 2px 10px color-mix(in srgb, var(--result-color, transparent) 35%, transparent);
+    transform: translateX(calc(var(--idx, 0) * 100%));
+    transition:
+      transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+      background 0.30s var(--ease),
+      box-shadow 0.30s var(--ease),
+      opacity 0.30s var(--ease);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+  }
+  :root[data-theme="light"] .result-toggle-indicator {
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.60) inset,
+      0 -1px 0 rgba(0,0,0,0.06) inset,
+      0 2px 10px color-mix(in srgb, var(--result-color, transparent) 30%, transparent);
+  }
+  .result-toggle:hover .result-toggle-indicator,
+  .result-toggle[data-has-result="1"] .result-toggle-indicator { opacity: 1; }
   .result-toggle button {
+    position: relative;
+    z-index: 1;
     background: transparent;
     border: none;
     padding: 10px;
@@ -444,33 +483,92 @@
     font-weight: 700;
     letter-spacing: 0.1em;
     border-radius: var(--radius-pill);
-    transition: all var(--transition);
+    transition: color 0.22s var(--ease), transform 0.10s var(--ease);
     -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    font-family: inherit;
   }
-  .result-toggle button:hover:not(.active) {
+  .result-toggle button:hover { color: var(--text); }
+  .result-toggle button:active { transform: scale(0.96); }
+  /* Indicator is sitting under this button — dark text on the colored fill */
+  .result-toggle button.lit,
+  .result-toggle button.active {
+    background: transparent;
+    box-shadow: none;
+    color: #0c1410;
+  }
+
+  /* === Match Result chip (derived overall in Bo3, read-only) === */
+  .match-result-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 50%, transparent 100%),
+      var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.06) inset,
+      0 1px 2px rgba(0,0,0,0.20);
+    transition:
+      background 0.30s var(--ease),
+      border-color 0.30s var(--ease),
+      color 0.30s var(--ease),
+      box-shadow 0.30s var(--ease);
+    width: fit-content;
+  }
+  .match-result-chip-tally {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
     color: var(--text);
-    background: var(--bg-elev-2);
   }
-  .result-toggle button.active.win {
-    background: linear-gradient(180deg, #6ee7b7 0%, var(--win) 100%);
-    color: #0c2419;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 2px 8px rgba(74, 222, 128, 0.35);
+  .match-result-chip-status {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: var(--text-faint);
   }
-  .result-toggle button.active.loss {
-    background: linear-gradient(180deg, #fb7185 0%, var(--loss) 100%);
-    color: #2a0808;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 2px 8px rgba(239, 68, 68, 0.35);
+  .match-result-chip.is-win {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--win) 28%, transparent) 0%, color-mix(in srgb, var(--win) 6%, transparent) 100%),
+      var(--bg-elev);
+    border-color: color-mix(in srgb, var(--win) 55%, transparent);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 2px 12px color-mix(in srgb, var(--win) 28%, transparent);
   }
-  .result-toggle button.active.draw {
-    background: linear-gradient(180deg, #ffd933 0%, var(--draw) 100%);
-    color: #1a1410;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 2px 8px var(--accent-glow);
+  .match-result-chip.is-win .match-result-chip-status { color: var(--win); }
+  .match-result-chip.is-loss {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--loss) 28%, transparent) 0%, color-mix(in srgb, var(--loss) 6%, transparent) 100%),
+      var(--bg-elev);
+    border-color: color-mix(in srgb, var(--loss) 55%, transparent);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 2px 12px color-mix(in srgb, var(--loss) 28%, transparent);
   }
-  :root[data-theme="light"] .result-toggle button.active.win,
-  :root[data-theme="light"] .result-toggle button.active.loss,
-  :root[data-theme="light"] .result-toggle button.active.draw {
-    box-shadow: 0 1px 0 rgba(255,255,255,0.60) inset, 0 2px 8px var(--accent-glow);
+  .match-result-chip.is-loss .match-result-chip-status { color: var(--accent-2-text); }
+  .match-result-chip.is-draw {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--draw) 28%, transparent) 0%, color-mix(in srgb, var(--draw) 6%, transparent) 100%),
+      var(--bg-elev);
+    border-color: color-mix(in srgb, var(--draw) 55%, transparent);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 2px 12px color-mix(in srgb, var(--draw) 28%, transparent);
   }
+  .match-result-chip.is-draw .match-result-chip-status { color: var(--accent-text); }
+
+  /* Bo1 / Bo3 visibility utility (managed by applyBo3UiVisibility) */
+  .bo1-only, .bo3-only { transition: opacity 0.22s var(--ease); }
 
   /* === Best-of-3 toggle (iOS switch pattern, glass-consistent) === */
   .bo3-field {
@@ -3044,12 +3142,20 @@
           <input type="text" id="f-opponent" placeholder="Username or note" />
         </div>
       </div>
-      <div class="field">
+      <div class="field bo1-only">
         <label>Result</label>
-        <div class="result-toggle">
-          <button data-result="Win" onclick="setResult('Win')">Win</button>
-          <button data-result="Loss" onclick="setResult('Loss')">Loss</button>
-          <button data-result="Draw" onclick="setResult('Draw')">Draw</button>
+        <div class="result-toggle" id="result-toggle-main">
+          <div class="result-toggle-indicator"></div>
+          <button data-result="Win" data-result-color="var(--win)" onclick="setResult('Win')">Win</button>
+          <button data-result="Loss" data-result-color="var(--loss)" onclick="setResult('Loss')">Loss</button>
+          <button data-result="Draw" data-result-color="var(--draw)" onclick="setResult('Draw')">Draw</button>
+        </div>
+      </div>
+      <div class="field bo3-only" style="display:none;">
+        <label>Match Result</label>
+        <div class="match-result-chip" id="match-result-chip">
+          <span class="match-result-chip-tally">0–0</span>
+          <span class="match-result-chip-status">In progress</span>
         </div>
       </div>
       <div class="field bo3-field">
@@ -3268,6 +3374,15 @@
   <div id="mode-quick">
     <div class="card">
       <div class="card-title">Live Log<span class="hint" id="log-count-hint"></span></div>
+      <div class="field bo3-only" id="game-result-field" style="display:none;">
+        <label id="game-result-label">Game 1 Result</label>
+        <div class="result-toggle" id="result-toggle-game">
+          <div class="result-toggle-indicator"></div>
+          <button data-result="Win" data-result-color="var(--win)" onclick="setResult('Win')">Win</button>
+          <button data-result="Loss" data-result-color="var(--loss)" onclick="setResult('Loss')">Loss</button>
+          <button data-result="Draw" data-result-color="var(--draw)" onclick="setResult('Draw')">Draw</button>
+        </div>
+      </div>
       <div class="log-list" id="log-list">
         <div class="log-empty">No entries yet — tap a tag, type your note, hit Add.</div>
       </div>
@@ -6098,18 +6213,103 @@ function bindTeamSlot(id, arr, idx) {
   });
 }
 
+// Result toggle sliding indicator — drives both #result-toggle-main and
+// #result-toggle-game. Same pattern as .mode-tabs / .composer-tags.
+const RESULT_ORDER = ['Win', 'Loss', 'Draw'];
+const RESULT_COLORS = { Win: 'var(--win)', Loss: 'var(--loss)', Draw: 'var(--draw)' };
+
+function applyResultToggleIndicator(container, r) {
+  if (!container) return;
+  const idx = RESULT_ORDER.indexOf(r);
+  const btns = Array.from(container.querySelectorAll('button[data-result]'));
+  if (idx >= 0) {
+    container.setAttribute('data-has-result', '1');
+    container.style.setProperty('--idx', String(idx));
+    container.style.setProperty('--result-color', RESULT_COLORS[r]);
+    btns.forEach((b, j) => b.classList.toggle('lit', j === idx));
+  } else {
+    container.removeAttribute('data-has-result');
+    btns.forEach(b => b.classList.remove('lit'));
+  }
+}
 function applyResultToggle(r) {
-  document.querySelectorAll('.result-toggle button').forEach(b => {
-    b.classList.toggle('active', b.dataset.result === r);
-    b.classList.toggle('win', b.dataset.result === 'Win');
-    b.classList.toggle('loss', b.dataset.result === 'Loss');
-    b.classList.toggle('draw', b.dataset.result === 'Draw');
+  document.querySelectorAll('.result-toggle').forEach(c => applyResultToggleIndicator(c, r));
+}
+
+// Hover preview / leave-restore for both result-toggle containers.
+function setupResultToggleHovers() {
+  document.querySelectorAll('.result-toggle').forEach(container => {
+    const btns = Array.from(container.querySelectorAll('button[data-result]'));
+    btns.forEach((btn, i) => {
+      btn.addEventListener('mouseenter', () => {
+        container.style.setProperty('--idx', String(i));
+        const color = btn.dataset.resultColor;
+        if (color) container.style.setProperty('--result-color', color);
+        btns.forEach((b, j) => b.classList.toggle('lit', j === i));
+      });
+    });
+    container.addEventListener('mouseleave', () => {
+      applyResultToggleIndicator(container, getActiveGame().result || '');
+    });
   });
+}
+
+// Derive overall match outcome from per-game results in Bo3.
+// First to 2 wins or 2 losses takes the match; otherwise undetermined.
+function deriveMatchResult() {
+  const games = Array.isArray(state.games) ? state.games : [];
+  let w = 0, l = 0, d = 0;
+  for (const g of games) {
+    if (!g) continue;
+    if (g.result === 'Win') w++;
+    else if (g.result === 'Loss') l++;
+    else if (g.result === 'Draw') d++;
+  }
+  let outcome = '';
+  if (w >= 2) outcome = 'Win';
+  else if (l >= 2) outcome = 'Loss';
+  return { wins: w, losses: l, draws: d, outcome };
+}
+
+function renderMatchResultChip() {
+  const chip = document.getElementById('match-result-chip');
+  if (!chip) return;
+  const { wins, losses, draws, outcome } = deriveMatchResult();
+  chip.classList.remove('is-win', 'is-loss', 'is-draw');
+  if (outcome === 'Win') chip.classList.add('is-win');
+  else if (outcome === 'Loss') chip.classList.add('is-loss');
+  const tally = draws > 0 ? `${wins}–${losses}–${draws}` : `${wins}–${losses}`;
+  const status = outcome || 'In progress';
+  chip.innerHTML =
+    `<span class="match-result-chip-tally">${tally}</span>` +
+    `<span class="match-result-chip-status">${status}</span>`;
+}
+
+function renderGameResultLabel() {
+  const label = document.getElementById('game-result-label');
+  if (!label) return;
+  const idx = (state.activeGameIdx || 0) + 1;
+  label.textContent = `Game ${idx} Result`;
+}
+
+// Show/hide Bo1-vs-Bo3 chrome. Run on every renderAll + after any state
+// change that flips state.isBo3 or activeGameIdx.
+function applyBo3UiVisibility() {
+  const isBo3 = !!state.isBo3;
+  document.querySelectorAll('.bo1-only').forEach(el => {
+    el.style.display = isBo3 ? 'none' : '';
+  });
+  document.querySelectorAll('.bo3-only').forEach(el => {
+    el.style.display = isBo3 ? '' : 'none';
+  });
+  renderMatchResultChip();
+  renderGameResultLabel();
 }
 
 function setResult(r) {
   getActiveGame().result = r;
   applyResultToggle(r);
+  renderMatchResultChip();
   scheduleSave();
 }
 
@@ -6290,6 +6490,7 @@ function renderAll() {
   renderThreatBar();
   renderBo3Toggle();
   renderGameTabs();
+  applyBo3UiVisibility();
   applyCollapsedState();
 }
 
@@ -7888,6 +8089,9 @@ function init() {
 
   // Capture v2 — cursor-tracking spotlight (delegated, picks up any [data-spotlight])
   setupSpotlight();
+
+  // Result toggle sliding-indicator hovers (both #result-toggle-main and game)
+  setupResultToggleHovers();
 
   // Mode tabs: sliding indicator with hover-preview / click-commit
   const modeTabsEl = document.getElementById('mode-tabs');

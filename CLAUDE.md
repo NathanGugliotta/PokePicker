@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-file, no-build, vanilla-JS web app for logging competitive Pokémon Champions VGC matches. The entire app — HTML, CSS, JS, embedded reference data — lives in `index.html` (~225 KB, ~6.5k lines). Source lives at https://github.com/NathanGugliotta/PokePicker; deploys to https://pokepicker.netlify.app via Netlify auto-build on every push to `main` (no CI step, the repo root *is* the published site). Used on iPad and Mac Safari; designed to also work as an iOS home-screen standalone app.
+A single-file, no-build, vanilla-JS web app for logging competitive Pokémon Champions VGC matches. The entire app — HTML, CSS, JS, embedded reference data — lives in `index.html` (~225 KB, ~6.5k lines). Source lives at https://github.com/NathanGugliotta/PokePicker; deploys to https://nathangugliotta.github.io/PokePicker/ via GitHub Pages auto-build on every push to `main` (no CI step, the repo root *is* the published site). Used on iPad and Mac Safari; designed to also work as an iOS home-screen standalone app.
 
 Built by and for Nathan, a competitive VGC player and senior trademark attorney — knows the game deeply, newer to web dev. Explain dev concepts (Git, modules, build steps) when introducing them; don't over-explain things he clearly already gets. He has ADHD and gets overwhelmed by jargon — keep technical terms grounded.
 
@@ -118,7 +118,7 @@ Inspired by Phil Wingett / THATSAplusONE coaching frame:
 
 ## Workflow
 
-- **Deploy:** `git push` to `main` on https://github.com/NathanGugliotta/PokePicker — Netlify auto-builds from the repo root and publishes to https://pokepicker.netlify.app within ~1 minute. No build step; no staging. The earlier Netlify Drop workflow is superseded — don't drag files into Drop anymore or it'll conflict with the Git pipeline.
+- **Deploy:** `git push` to `main` on https://github.com/NathanGugliotta/PokePicker — GitHub Pages auto-builds from the repo root and publishes to https://nathangugliotta.github.io/PokePicker/ within ~1 minute. No CI; no build step; no staging. (Previously deployed via Netlify Drop and then Netlify auto-deploy; both retired in favour of Pages.)
 - **Edit cycle:** Claude Code edits the file directly. Show diffs before applying non-trivial changes — Nathan likes to see what's changing.
 - **Checkpoints:** small, focused commits with clear messages when a feature spans multiple steps.
 - **Verification:** Nathan reviews on iPad Safari + Mac Safari; cache is aggressive, hard refresh sometimes needed. Test light AND dark mode when touching CSS.
@@ -149,6 +149,6 @@ Avoid:
 
 ## Useful project links
 
-- Live app: https://pokepicker.netlify.app
-- Deploy: https://app.netlify.com/drop (Nathan's Netlify account)
+- Live app: https://nathangugliotta.github.io/PokePicker/
+- Deploy: `git push` to `main` (GitHub Pages auto-builds from repo root)
 - Parent vault: `/Users/nathangugliotta/Documents/Gugliotta & Gugliotta, LPA/` (this app sits under `1 Areas/Poke Picker App/`)
