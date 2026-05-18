@@ -533,6 +533,42 @@
   }
 
   /* ============================================================
+     COLLAPSIBLE CARDS — Match Info / My Team / Opp Team
+     Tap the card title to collapse the body. State persists per-match
+     via state.collapsed so a draft remembers which cards were folded
+     when you re-open it, but newMatch() starts fresh-expanded.
+     ============================================================ */
+  .card.collapsible > .card-title {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    margin-bottom: 12px;
+  }
+  .card.collapsible.is-collapsed > .card-title { margin-bottom: 0; }
+  .card-collapse-chev {
+    margin-left: 8px;
+    font-size: 11px;
+    color: var(--text-faint);
+    transition: transform 0.32s var(--ease);
+    flex-shrink: 0;
+  }
+  .card.is-collapsed .card-collapse-chev { transform: rotate(-90deg); }
+  .card.collapsible .card-body {
+    overflow: hidden;
+    max-height: 4000px;
+    transition: max-height 0.32s var(--ease), opacity 0.22s var(--ease);
+    opacity: 1;
+  }
+  .card.is-collapsed .card-body {
+    max-height: 0;
+    opacity: 0;
+  }
+  /* Inner subsection eyebrows (My Lead / My Back inside My Team body) */
+  .card.collapsible .card-body > .card-title:not(:first-child) {
+    margin-top: 14px;
+  }
+
+  /* ============================================================
      CAPTURE V2 — Liquid Glass refresh
      Sliding-indicator segmented controls, cursor-tracking
      spotlights on glass tiles + log pills, opp team as chunky
@@ -2973,45 +3009,47 @@
   </div>
 
   <!-- ============== METADATA (Capture + Reflect only) ============== -->
-  <div class="card match-context">
-    <div class="card-title">Match Info</div>
-    <div class="field-row">
-      <div class="field">
-        <label>Date</label>
-        <input type="date" id="f-date" />
+  <div class="card match-context collapsible" id="card-match-info">
+    <div class="card-title" onclick="toggleSection('matchInfo')">Match Info<span class="card-collapse-chev">▾</span></div>
+    <div class="card-body">
+      <div class="field-row">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="f-date" />
+        </div>
+        <div class="field">
+          <label>Format</label>
+          <select id="f-format">
+            <option value="Doubles">Doubles (VGC)</option>
+            <option value="Singles">Singles / OU</option>
+            <option value="BattleStadium">Battle Stadium</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Regulation</label>
+          <input type="text" id="f-reg" value="M-A" placeholder="e.g. M-A" />
+        </div>
+        <div class="field">
+          <label>Opponent</label>
+          <input type="text" id="f-opponent" placeholder="Username or note" />
+        </div>
       </div>
       <div class="field">
-        <label>Format</label>
-        <select id="f-format">
-          <option value="Doubles">Doubles (VGC)</option>
-          <option value="Singles">Singles / OU</option>
-          <option value="BattleStadium">Battle Stadium</option>
-        </select>
+        <label>Result</label>
+        <div class="result-toggle">
+          <button data-result="Win" onclick="setResult('Win')">Win</button>
+          <button data-result="Loss" onclick="setResult('Loss')">Loss</button>
+          <button data-result="Draw" onclick="setResult('Draw')">Draw</button>
+        </div>
       </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Regulation</label>
-        <input type="text" id="f-reg" value="M-A" placeholder="e.g. M-A" />
+      <div class="field bo3-field">
+        <span class="bo3-toggle-label" onclick="toggleBo3()">Best of 3</span>
+        <button type="button" class="bo3-toggle-track" id="bo3-toggle" role="switch" aria-checked="false" onclick="toggleBo3()" aria-label="Toggle Best of 3">
+          <span class="bo3-toggle-thumb"></span>
+        </button>
       </div>
-      <div class="field">
-        <label>Opponent</label>
-        <input type="text" id="f-opponent" placeholder="Username or note" />
-      </div>
-    </div>
-    <div class="field">
-      <label>Result</label>
-      <div class="result-toggle">
-        <button data-result="Win" onclick="setResult('Win')">Win</button>
-        <button data-result="Loss" onclick="setResult('Loss')">Loss</button>
-        <button data-result="Draw" onclick="setResult('Draw')">Draw</button>
-      </div>
-    </div>
-    <div class="field bo3-field">
-      <span class="bo3-toggle-label" onclick="toggleBo3()">Best of 3</span>
-      <button type="button" class="bo3-toggle-track" id="bo3-toggle" role="switch" aria-checked="false" onclick="toggleBo3()" aria-label="Toggle Best of 3">
-        <span class="bo3-toggle-thumb"></span>
-      </button>
     </div>
   </div>
 
@@ -3034,46 +3072,50 @@
       <button type="button" class="team-status-unload" id="team-status-unload-btn" onclick="unloadMatchTeam()" style="display:none;">× Unload</button>
     </div>
   </div>
-  <div class="card match-context">
-    <div class="card-title">My Lead</div>
-    <div class="team-slots team-slots-lead">
-      <div class="my-slot-row" id="my-slot-row-lead-1">
-      <div class="my-slot-wrap">
-        <input class="team-slot" id="lead-1" placeholder="Lead 1" list="pkmn-list" />
-        <button type="button" class="my-slot-pick-btn" onclick="openPickMon('lead', 0)">Pick</button>
+  <div class="card match-context collapsible" id="card-my-team">
+    <div class="card-title" onclick="toggleSection('myTeam')">My Team<span class="card-collapse-chev">▾</span></div>
+    <div class="card-body">
+      <div class="card-title">My Lead</div>
+      <div class="team-slots team-slots-lead">
+        <div class="my-slot-row" id="my-slot-row-lead-1">
+        <div class="my-slot-wrap">
+          <input class="team-slot" id="lead-1" placeholder="Lead 1" list="pkmn-list" />
+          <button type="button" class="my-slot-pick-btn" onclick="openPickMon('lead', 0)">Pick</button>
+        </div>
+        <div class="my-slot-moves-preview" id="my-slot-preview-lead-1"></div>
       </div>
-      <div class="my-slot-moves-preview" id="my-slot-preview-lead-1"></div>
-    </div>
-      <div class="my-slot-row" id="my-slot-row-lead-2">
-      <div class="my-slot-wrap">
-        <input class="team-slot" id="lead-2" placeholder="Lead 2" list="pkmn-list" />
-        <button type="button" class="my-slot-pick-btn" onclick="openPickMon('lead', 1)">Pick</button>
+        <div class="my-slot-row" id="my-slot-row-lead-2">
+        <div class="my-slot-wrap">
+          <input class="team-slot" id="lead-2" placeholder="Lead 2" list="pkmn-list" />
+          <button type="button" class="my-slot-pick-btn" onclick="openPickMon('lead', 1)">Pick</button>
+        </div>
+        <div class="my-slot-moves-preview" id="my-slot-preview-lead-2"></div>
       </div>
-      <div class="my-slot-moves-preview" id="my-slot-preview-lead-2"></div>
-    </div>
-    </div>
-    <div class="card-title">My Back</div>
-    <div class="team-slots">
-      <div class="my-slot-row" id="my-slot-row-back-1">
-      <div class="my-slot-wrap">
-        <input class="team-slot" id="back-1" placeholder="Back 1" list="pkmn-list" />
-        <button type="button" class="my-slot-pick-btn" onclick="openPickMon('back', 0)">Pick</button>
       </div>
-      <div class="my-slot-moves-preview" id="my-slot-preview-back-1"></div>
-    </div>
-      <div class="my-slot-row" id="my-slot-row-back-2">
-      <div class="my-slot-wrap">
-        <input class="team-slot" id="back-2" placeholder="Back 2" list="pkmn-list" />
-        <button type="button" class="my-slot-pick-btn" onclick="openPickMon('back', 1)">Pick</button>
+      <div class="card-title">My Back</div>
+      <div class="team-slots">
+        <div class="my-slot-row" id="my-slot-row-back-1">
+        <div class="my-slot-wrap">
+          <input class="team-slot" id="back-1" placeholder="Back 1" list="pkmn-list" />
+          <button type="button" class="my-slot-pick-btn" onclick="openPickMon('back', 0)">Pick</button>
+        </div>
+        <div class="my-slot-moves-preview" id="my-slot-preview-back-1"></div>
       </div>
-      <div class="my-slot-moves-preview" id="my-slot-preview-back-2"></div>
+        <div class="my-slot-row" id="my-slot-row-back-2">
+        <div class="my-slot-wrap">
+          <input class="team-slot" id="back-2" placeholder="Back 2" list="pkmn-list" />
+          <button type="button" class="my-slot-pick-btn" onclick="openPickMon('back', 1)">Pick</button>
+        </div>
+        <div class="my-slot-moves-preview" id="my-slot-preview-back-2"></div>
+      </div>
+      </div>
+      <div class="my-team-hint">In VGC, you Bring 6 → Take 4. Pick the 2 leads + 2 backs you brought.</div>
     </div>
-    </div>
-    <div class="my-team-hint">In VGC, you Bring 6 → Take 4. Pick the 2 leads + 2 backs you brought.</div>
   </div>
 
-  <div class="card match-context">
-    <div class="card-title">Opponent's Team<span class="hint" id="opp-brought-count"></span></div>
+  <div class="card match-context collapsible" id="card-opp-team">
+    <div class="card-title" onclick="toggleSection('oppTeam')">Opponent's Team<span class="hint" id="opp-brought-count"></span><span class="card-collapse-chev">▾</span></div>
+    <div class="card-body">
     <div class="opp-tiles">
       <div class="opp-tile" id="opp-tile-1" data-spotlight>
         <div class="opp-tile-edge"></div>
@@ -3197,6 +3239,7 @@
       </div>
     </div>
     <div class="opp-brought-hint">Tap Bring? when they send a Pokémon to battle. Threat coverage narrows to brought-only.</div>
+    </div>
   </div>
 
   <!-- ============== THREAT COVERAGE (auto-shows when opponent is filled) ============== -->
@@ -5681,6 +5724,8 @@ function blankState() {
     totest: '',
     rating: 0,
     mode: 'quick',
+    // Per-card collapsed state (UI preference, persisted with the match)
+    collapsed: { matchInfo: false, myTeam: false, oppTeam: false },
     updated: Date.now(),
   };
 }
@@ -5899,6 +5944,26 @@ function refreshComposerTagState() {
 }
 
 // Render the small type-chip pair inside an opp tile based on the typed name.
+// Collapsible cards: persist per-match, applied on every render.
+const COLLAPSE_MAP = {
+  matchInfo: 'card-match-info',
+  myTeam: 'card-my-team',
+  oppTeam: 'card-opp-team',
+};
+function toggleSection(section) {
+  if (!state.collapsed || typeof state.collapsed !== 'object') state.collapsed = {};
+  state.collapsed[section] = !state.collapsed[section];
+  applyCollapsedState();
+  scheduleSave();
+}
+function applyCollapsedState() {
+  const c = state.collapsed || {};
+  for (const [key, id] of Object.entries(COLLAPSE_MAP)) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('is-collapsed', !!c[key]);
+  }
+}
+
 function renderOppTypeChips(idx) {
   const container = document.getElementById(`opp-type-chips-${idx + 1}`);
   if (!container) return;
@@ -6166,6 +6231,7 @@ function renderAll() {
   renderThreatBar();
   renderBo3Toggle();
   renderGameTabs();
+  applyCollapsedState();
 }
 
 // ============ MARKDOWN OUTPUT ============
