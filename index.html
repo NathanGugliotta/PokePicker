@@ -196,7 +196,12 @@
   .app {
     max-width: 720px;
     margin: 0 auto;
-    padding: 16px 16px 120px;
+    /* Respect notch / Dynamic Island / home-indicator on iPhone.
+       Pairs with viewport-fit=cover + apple-mobile-web-app-status-bar-style. */
+    padding-top:    max(16px, env(safe-area-inset-top));
+    padding-right:  max(16px, env(safe-area-inset-right));
+    padding-bottom: max(120px, env(safe-area-inset-bottom));
+    padding-left:   max(16px, env(safe-area-inset-left));
     min-height: 100vh;
   }
 
@@ -1485,7 +1490,10 @@
     right: 0;
     background: var(--bg-elev);
     border-top: 1px solid var(--border-bright);
-    padding: 12px 16px;
+    padding-top: 12px;
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-left:  max(16px, env(safe-area-inset-left));
     display: flex;
     gap: 10px;
     z-index: 50;
