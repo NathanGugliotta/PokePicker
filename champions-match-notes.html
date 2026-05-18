@@ -459,6 +459,125 @@
     box-shadow: 0 1px 0 rgba(255,255,255,0.60) inset, 0 2px 8px var(--accent-glow);
   }
 
+  /* === Best-of-3 toggle (iOS switch pattern, glass-consistent) === */
+  .bo3-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .bo3-toggle-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    letter-spacing: -0.005em;
+    transition: color var(--transition);
+  }
+  .bo3-field.is-on .bo3-toggle-label {
+    color: var(--text);
+  }
+  .bo3-toggle-track {
+    position: relative;
+    width: 50px;
+    height: 30px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bo3-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    background: var(--bg-elev-2-solid);
+    border-radius: 50%;
+    transition: transform var(--transition), background var(--transition);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 1px 3px rgba(0,0,0,0.30);
+    pointer-events: none;
+  }
+  :root[data-theme="light"] .bo3-toggle-thumb {
+    background: #ffffff;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 1px 3px rgba(0,0,0,0.18);
+  }
+  .bo3-toggle-track.is-on {
+    background: linear-gradient(180deg, #ffd933 0%, var(--accent) 100%);
+    border-color: var(--accent);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 2px 8px var(--accent-glow);
+  }
+  :root[data-theme="light"] .bo3-toggle-track.is-on {
+    box-shadow: 0 1px 0 rgba(255,255,255,0.60) inset, 0 2px 8px var(--accent-glow);
+  }
+  .bo3-toggle-track.is-on .bo3-toggle-thumb {
+    transform: translateX(20px);
+    background: #ffffff;
+  }
+
+  /* === Best-of-3 game tabs (glass-pill segmented, matches .mode-tabs) === */
+  .game-tabs-wrap {
+    margin-bottom: 14px;
+  }
+  .game-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  .game-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: inherit;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .game-tab:hover:not(.active) {
+    color: var(--text);
+    background: var(--bg-elev-2);
+  }
+  .game-tab.active {
+    color: #1a1410;
+    background: linear-gradient(180deg, #ffd933 0%, var(--accent) 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset, 0 2px 8px var(--accent-glow);
+  }
+  :root[data-theme="light"] .game-tab.active {
+    box-shadow: 0 1px 0 rgba(255,255,255,0.60) inset, 0 2px 8px var(--accent-glow);
+  }
+  .game-tab.add-game {
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-weight: 600;
+    padding: 9px 14px;
+  }
+  .game-tab.add-game:hover {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+  }
+
   /* === Team chips === */
   .team-slots {
     display: grid;
@@ -2167,6 +2286,17 @@
         <button data-result="Draw" onclick="setResult('Draw')">Draw</button>
       </div>
     </div>
+    <div class="field bo3-field">
+      <span class="bo3-toggle-label" onclick="toggleBo3()">Best of 3</span>
+      <button type="button" class="bo3-toggle-track" id="bo3-toggle" role="switch" aria-checked="false" onclick="toggleBo3()" aria-label="Toggle Best of 3">
+        <span class="bo3-toggle-thumb"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============== BEST-OF-3 GAME TABS ============== -->
+  <div class="game-tabs-wrap match-context" id="game-tabs-wrap" style="display:none;">
+    <div class="game-tabs" id="game-tabs"></div>
   </div>
 
   <!-- ============== TEAMS ============== -->
@@ -4958,14 +5088,18 @@ function bindTeamSlot(id, arr, idx) {
   });
 }
 
-function setResult(r) {
-  getActiveGame().result = r;
+function applyResultToggle(r) {
   document.querySelectorAll('.result-toggle button').forEach(b => {
     b.classList.toggle('active', b.dataset.result === r);
     b.classList.toggle('win', b.dataset.result === 'Win');
     b.classList.toggle('loss', b.dataset.result === 'Loss');
     b.classList.toggle('draw', b.dataset.result === 'Draw');
   });
+}
+
+function setResult(r) {
+  getActiveGame().result = r;
+  applyResultToggle(r);
   scheduleSave();
 }
 
@@ -4975,6 +5109,71 @@ function setRating(n) {
     b.classList.toggle('active', parseInt(b.dataset.rating) === n);
   });
   scheduleSave();
+}
+
+// ============ BEST-OF-3 / GAMES ============
+function renderBo3Toggle() {
+  const track = document.getElementById('bo3-toggle');
+  const wrap = document.getElementById('game-tabs-wrap');
+  const field = document.querySelector('.bo3-field');
+  if (!track) return;
+  const on = !!state.isBo3;
+  track.classList.toggle('is-on', on);
+  track.setAttribute('aria-checked', on ? 'true' : 'false');
+  if (field) field.classList.toggle('is-on', on);
+  if (wrap) wrap.style.display = on ? 'block' : 'none';
+}
+
+function renderGameTabs() {
+  const container = document.getElementById('game-tabs');
+  if (!container) return;
+  if (!state.isBo3) { container.innerHTML = ''; return; }
+  const games = Array.isArray(state.games) ? state.games : [];
+  const n = games.length;
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const isActive = i === state.activeGameIdx;
+    html += `<button type="button" class="game-tab${isActive ? ' active' : ''}" onclick="setActiveGame(${i})">Game ${i + 1}</button>`;
+  }
+  if (n < 3) {
+    html += `<button type="button" class="game-tab add-game" onclick="addGame()">+ Game ${n + 1}</button>`;
+  }
+  container.innerHTML = html;
+}
+
+function toggleBo3() {
+  const turningOn = !state.isBo3;
+  if (!turningOn && Array.isArray(state.games) && state.games.length > 1) {
+    const msg = state.games.length > 2
+      ? 'Turn off Best of 3? Games 2 and 3 will be discarded.'
+      : 'Turn off Best of 3? Game 2 will be discarded.';
+    if (!confirm(msg)) return;
+    state.games = [state.games[0]];
+    state.activeGameIdx = 0;
+  }
+  state.isBo3 = turningOn;
+  scheduleSave();
+  renderAll();
+}
+
+function setActiveGame(idx) {
+  if (typeof idx !== 'number' ||
+      !Array.isArray(state.games) ||
+      idx < 0 ||
+      idx >= state.games.length ||
+      idx === state.activeGameIdx) return;
+  state.activeGameIdx = idx;
+  scheduleSave();
+  renderAll();
+}
+
+function addGame() {
+  if (!Array.isArray(state.games)) state.games = [blankGame()];
+  if (state.games.length >= 3) return;
+  state.games.push(blankGame());
+  state.activeGameIdx = state.games.length - 1;
+  scheduleSave();
+  renderAll();
 }
 
 // ============ LOG ============
@@ -5042,7 +5241,8 @@ function renderAll() {
   document.getElementById('f-format').value = state.format;
   document.getElementById('f-reg').value = state.regulation;
   document.getElementById('f-opponent').value = state.opponent;
-  if (g.result) setResult(g.result);
+  // Reflect active game's result on the toggle without scheduleSave side-effects
+  applyResultToggle(g.result || '');
   for (let i = 0; i < 2; i++) document.getElementById(`lead-${i+1}`).value = g.leads[i] || '';
   for (let i = 0; i < 2; i++) {
     const el = document.getElementById(`back-${i+1}`);
@@ -5062,6 +5262,8 @@ function renderAll() {
   setMode(state.mode || 'quick');
   renderLog();
   renderThreatBar();
+  renderBo3Toggle();
+  renderGameTabs();
 }
 
 // ============ MARKDOWN OUTPUT ============
