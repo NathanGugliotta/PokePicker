@@ -49,8 +49,9 @@
     --shadow-btn-accent: 0 1px 0 rgba(255,255,255,0.20) inset, 0 4px 14px var(--accent-glow);
     --specular-top: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 40%);
     --bg-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath fill='none' stroke='%23ffcb05' stroke-opacity='0.030' stroke-width='1' d='M40 1L78 23v46L40 91 2 69V23z'/%3E%3C/svg%3E");
-    --bg-glow-1: radial-gradient(circle at 20% 0%, rgba(255, 203, 5, 0.04), transparent 50%);
-    --bg-glow-2: radial-gradient(circle at 80% 100%, rgba(239, 68, 68, 0.04), transparent 50%);
+    --bg-glow-1: radial-gradient(circle at 12% 10%, rgba(255, 203, 5, 0.16), transparent 40%);
+    --bg-glow-2: radial-gradient(circle at 90% 30%, rgba(239, 68, 68, 0.10), transparent 45%);
+    --bg-glow-3: radial-gradient(circle at 50% 95%, rgba(120, 60, 255, 0.08), transparent 50%);
   }
 
   /* === System-preference fallback for users with no JS / no data-theme === */
@@ -180,7 +181,7 @@
   }
 
   body {
-    background: var(--bg-pattern), var(--bg-glow-1), var(--bg-glow-2), var(--bg-grad);
+    background: var(--bg-pattern), var(--bg-glow-1), var(--bg-glow-2), var(--bg-glow-3, radial-gradient(circle, transparent, transparent)), var(--bg-grad);
     background-attachment: fixed;
   }
 
@@ -523,6 +524,718 @@
     transform: translateX(20px);
     background: #ffffff;
   }
+
+  /* ============================================================
+     CAPTURE V2 — Liquid Glass refresh
+     Sliding-indicator segmented controls, cursor-tracking
+     spotlights on glass tiles + log pills, opp team as chunky
+     tiles, log entries as glass pills, composer as a bottom dock
+     with white frosted input + circular FAB.
+     ============================================================ */
+
+  /* ── Sliding indicator on mode tabs ── */
+  .mode-tabs { position: relative; overflow: hidden; }
+  .mode-tab-indicator {
+    position: absolute;
+    top: 4px; bottom: 4px; left: 4px;
+    width: calc((100% - 8px) / 3);
+    border-radius: var(--radius-pill);
+    background: linear-gradient(180deg, #ffd933 0%, var(--accent) 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.30) inset,
+      0 -1px 0 rgba(0,0,0,0.08) inset,
+      0 2px 10px var(--accent-glow);
+    transform: translateX(calc(var(--idx, 0) * 100%));
+    transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+    pointer-events: none;
+    z-index: 0;
+  }
+  :root[data-theme="light"] .mode-tab-indicator {
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.60) inset,
+      0 -1px 0 rgba(0,0,0,0.08) inset,
+      0 2px 10px var(--accent-glow);
+  }
+  /* Indicator now does the highlight job; clear the per-tab gradient */
+  .mode-tab { position: relative; z-index: 1; }
+  .mode-tabs .mode-tab.active,
+  .mode-tabs .mode-tab.lit {
+    background: transparent;
+    box-shadow: none;
+    color: #1a1410;
+  }
+
+  /* ── Opp tiles ── */
+  .opp-tiles { display: flex; flex-direction: column; gap: 8px; }
+  .opp-tile {
+    position: relative;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 30%, transparent 70%),
+      rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    backdrop-filter: blur(34px) saturate(220%);
+    -webkit-backdrop-filter: blur(34px) saturate(220%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 -1px 0 rgba(0,0,0,0.20) inset,
+      0 4px 14px rgba(0,0,0,0.30);
+    transition:
+      border-color 0.35s var(--ease),
+      background 0.35s var(--ease),
+      box-shadow 0.35s var(--ease),
+      transform 0.22s var(--ease);
+    --mx: -100%;
+    --my: -100%;
+  }
+  :root[data-theme="light"] .opp-tile {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.60) 30%, rgba(255,255,255,0.40) 100%),
+      rgba(255, 255, 255, 0.40);
+    border-color: rgba(0,0,0,0.10);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.95) inset,
+      0 1px 3px rgba(0,0,0,0.06),
+      0 4px 14px rgba(0,0,0,0.06);
+  }
+  /* Cursor-tracking spotlight */
+  .opp-tile::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      220px circle at var(--mx) var(--my),
+      rgba(255,255,255,0.16) 0%,
+      rgba(255,255,255,0.04) 30%,
+      transparent 65%);
+    opacity: 0;
+    transition: opacity 0.35s var(--ease);
+    z-index: 1;
+    mix-blend-mode: screen;
+  }
+  .opp-tile:hover {
+    border-color: rgba(255,255,255,0.20);
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.14) inset,
+      0 -1px 0 rgba(0,0,0,0.20) inset,
+      0 8px 22px rgba(0,0,0,0.40);
+  }
+  :root[data-theme="light"] .opp-tile:hover {
+    border-color: rgba(0,0,0,0.16);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.95) inset,
+      0 1px 3px rgba(0,0,0,0.08),
+      0 8px 22px rgba(0,0,0,0.10);
+  }
+  .opp-tile:hover::after { opacity: 1; }
+
+  /* Edge light — 1px inner gradient stroke (top-left bright, bottom-right falloff) */
+  .opp-tile-edge {
+    pointer-events: none;
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.16) 0%,
+      rgba(255,255,255,0.04) 30%,
+      transparent 55%,
+      rgba(0,0,0,0.10) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    z-index: 0;
+  }
+  /* Specular glint at top-left */
+  .opp-tile-glint {
+    pointer-events: none;
+    position: absolute; top: -10px; left: -10px;
+    width: 120px; height: 60px;
+    background: radial-gradient(ellipse at center,
+      rgba(255,255,255,0.10) 0%,
+      rgba(255,255,255,0.04) 35%,
+      transparent 70%);
+    filter: blur(2px);
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  /* Brought state — yellow tint absorbed through the glass */
+  .opp-tile.is-brought {
+    background:
+      linear-gradient(180deg, rgba(255,203,5,0.16) 0%, rgba(255,203,5,0.04) 50%, transparent 100%),
+      linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 28%),
+      rgba(255, 203, 5, 0.04);
+    border-color: rgba(255, 203, 5, 0.38);
+    box-shadow:
+      0 1px 0 rgba(255, 220, 100, 0.25) inset,
+      0 -1px 0 rgba(0,0,0,0.20) inset,
+      0 4px 16px rgba(0,0,0,0.30),
+      0 0 24px rgba(255, 203, 5, 0.10);
+  }
+  .opp-tile.is-brought .opp-tile-edge {
+    background: linear-gradient(135deg,
+      rgba(255, 215, 80, 0.45) 0%,
+      rgba(255, 203, 5, 0.16) 25%,
+      rgba(255,255,255,0.04) 55%,
+      rgba(0,0,0,0.10) 100%);
+  }
+  .opp-tile.is-brought .opp-tile-glint {
+    background: radial-gradient(ellipse at center,
+      rgba(255, 220, 100, 0.20) 0%,
+      rgba(255, 203, 5, 0.06) 35%,
+      transparent 70%);
+  }
+
+  .opp-tile-head {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px 9px;
+  }
+  .opp-tile .opp-tile-input {
+    flex: 1; min-width: 0; width: auto;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    padding: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px; font-weight: 500;
+    outline: none; letter-spacing: -0.005em;
+    margin-bottom: 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 0;
+  }
+  .opp-tile .opp-tile-input:focus {
+    background: transparent;
+    border: none;
+  }
+  .opp-tile .opp-tile-input::placeholder {
+    color: var(--text-faint);
+    font-family: -apple-system, sans-serif;
+    font-weight: 400;
+  }
+  .opp-tile-types { display: flex; gap: 3px; flex-shrink: 0; }
+  .opp-tile-types .type-chip { padding: 2px 6px; font-size: 9px; border-radius: 3px; }
+  .opp-tile-types:empty { display: none; }
+
+  .opp-tile-foot {
+    position: relative; z-index: 2;
+    display: grid; grid-template-columns: auto 1fr;
+    gap: 6px;
+    padding: 0 9px 9px;
+  }
+
+  /* Brought button — recessed glass pill, fills yellow when active */
+  .opp-tile-brought {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--radius-pill);
+    color: var(--text-dim);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 1px 2px rgba(0,0,0,0.20);
+    transition: all 0.22s var(--ease);
+  }
+  :root[data-theme="light"] .opp-tile-brought {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(0,0,0,0.10);
+  }
+  .opp-tile-brought:hover:not(:disabled) {
+    color: var(--text);
+    border-color: rgba(255,255,255,0.22);
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.14) inset, 0 3px 8px rgba(0,0,0,0.25);
+  }
+  .opp-tile-brought:active { transform: scale(0.96); transition-duration: 0.10s; }
+  .opp-tile-brought:disabled { opacity: 0.4; cursor: default; }
+  .opp-tile-brought-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    border: 1.5px solid var(--text-faint); background: transparent;
+    transition: all 0.22s var(--ease);
+    flex-shrink: 0;
+  }
+  .opp-tile.is-brought .opp-tile-brought {
+    background: linear-gradient(180deg, #ffe066 0%, var(--accent) 100%);
+    border-color: var(--accent);
+    color: #1a1410;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.30) inset,
+      0 -1px 0 rgba(0,0,0,0.10) inset,
+      0 2px 10px var(--accent-glow);
+  }
+  .opp-tile.is-brought .opp-tile-brought-dot { background: #1a1410; border-color: #1a1410; }
+
+  /* Scout button — glass pill, lifts on hover, pulsing beacon dot when intel saved */
+  .opp-tile-scout {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 8px 7px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--radius-pill);
+    color: var(--text);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 1px 2px rgba(0,0,0,0.25);
+    overflow: hidden;
+    text-align: left;
+    transition: all 0.22s var(--ease);
+  }
+  :root[data-theme="light"] .opp-tile-scout {
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(0,0,0,0.10);
+  }
+  .opp-tile-scout::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 55%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 100%);
+    pointer-events: none; border-radius: 999px 999px 0 0;
+  }
+  .opp-tile-scout > * { position: relative; z-index: 1; }
+  .opp-tile-scout:hover {
+    border-color: var(--accent);
+    background: rgba(255, 203, 5, 0.12);
+    color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.16) inset,
+      0 3px 10px var(--accent-glow),
+      0 1px 2px rgba(0,0,0,0.25);
+  }
+  .opp-tile-scout:active { transform: translateY(0) scale(0.97); transition-duration: 0.10s; }
+  .opp-tile-scout-icon { font-size: 14px; }
+  .opp-tile-scout-label { flex: 1; }
+  .opp-tile-scout-chev {
+    color: var(--text-faint); font-size: 14px;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+    transition: all 0.22s var(--ease);
+    flex-shrink: 0;
+  }
+  .opp-tile-scout:hover .opp-tile-scout-chev { background: var(--accent-soft); color: var(--accent); }
+  /* Saved-intel state — yellow rim + pulsing beacon dot */
+  .opp-tile-scout.has-data {
+    border-color: rgba(255, 203, 5, 0.42);
+    background: rgba(255, 203, 5, 0.06);
+    color: var(--accent-text);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.12) inset,
+      0 0 0 1px rgba(255, 203, 5, 0.08) inset,
+      0 2px 10px rgba(255, 203, 5, 0.12);
+  }
+  .opp-tile-scout.has-data::before {
+    content: ''; position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    z-index: 2;
+    animation: pulse-dot 2.4s infinite ease-in-out;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+    50%      { opacity: 0.55; transform: translateY(-50%) scale(0.85); }
+  }
+  .opp-tile-scout.has-data .opp-tile-scout-chev { color: var(--accent); background: var(--accent-soft); }
+
+  /* Saved-intel chip band (re-uses existing .scout-chip classes from renderScoutChips) */
+  .opp-tile-intel {
+    position: relative; z-index: 2;
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 0 10px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  }
+  .opp-tile-intel:empty { padding: 0; }
+  .opp-tile-intel .scout-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px;
+    background: rgba(255, 203, 5, 0.10);
+    color: var(--accent-text);
+    border: 1px solid rgba(255, 203, 5, 0.18);
+    border-radius: var(--radius-pill);
+    font-weight: 600; letter-spacing: 0.02em;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+  }
+  .opp-tile-intel .scout-chip-mega {
+    background: linear-gradient(180deg, rgba(255, 230, 130, 0.20) 0%, rgba(255, 203, 5, 0.12) 100%);
+    border-color: rgba(255, 203, 5, 0.40);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .opp-tile-intel .scout-chip-move,
+  .opp-tile-intel .scout-chip-note {
+    color: var(--text);
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.10);
+  }
+  :root[data-theme="light"] .opp-tile-intel .scout-chip-move,
+  :root[data-theme="light"] .opp-tile-intel .scout-chip-note {
+    color: var(--text);
+    background: rgba(0,0,0,0.04);
+    border-color: rgba(0,0,0,0.08);
+  }
+
+  /* Card-title hint suffix (e.g. "3/6 brought") */
+  .card-title .hint {
+    color: var(--text-faint); font-weight: 400; text-transform: none;
+    letter-spacing: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    margin-left: auto;
+  }
+
+  /* ── Log pills (new renderLog output structure) ── */
+  .log-list {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 12px;
+    min-height: 40px;
+  }
+  .log-pill {
+    position: relative;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--tag-color, transparent) 14%, transparent) 0%, transparent 35%),
+      linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 35%),
+      rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--radius-md);
+    padding: 9px 12px 9px 14px;
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 2px 8px rgba(0,0,0,0.20);
+    overflow: hidden;
+    animation: slideIn 0.28s var(--ease);
+    transition:
+      border-color 0.35s var(--ease),
+      box-shadow 0.35s var(--ease),
+      transform 0.22s var(--ease);
+    --mx: -100%; --my: -100%;
+  }
+  :root[data-theme="light"] .log-pill {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--tag-color, transparent) 14%, transparent) 0%, transparent 35%),
+      linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.70) 100%),
+      rgba(255, 255, 255, 0.60);
+    border-color: rgba(0,0,0,0.08);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.95) inset,
+      0 1px 3px rgba(0,0,0,0.04),
+      0 2px 8px rgba(0,0,0,0.06);
+  }
+  .log-pill::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      180px circle at var(--mx) var(--my),
+      color-mix(in srgb, var(--tag-color, white) 25%, white) 0%,
+      transparent 60%);
+    opacity: 0;
+    transition: opacity 0.35s var(--ease);
+    mix-blend-mode: screen;
+    z-index: 1;
+  }
+  .log-pill:hover {
+    border-color: color-mix(in srgb, var(--tag-color, white) 35%, rgba(255,255,255,0.10));
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 4px 14px rgba(0,0,0,0.30),
+      0 0 12px color-mix(in srgb, var(--tag-color, transparent) 15%, transparent);
+  }
+  .log-pill:hover::after { opacity: 1; }
+  /* Left-edge tag-color accent (soft vertical glow, not a hard bar) */
+  .log-pill::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--tag-color, transparent);
+    box-shadow: 0 0 12px var(--tag-color, transparent), 0 0 4px var(--tag-color, transparent);
+    opacity: 0.85;
+    z-index: 2;
+  }
+  .log-pill-head {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .log-pill-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--tag-color, var(--text-dim));
+    text-transform: uppercase;
+  }
+  .log-pill-emoji { font-size: 11px; }
+  .log-pill-time {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text-faint); letter-spacing: 0.04em;
+  }
+  .log-pill-text {
+    position: relative; z-index: 2;
+    font-size: 13px; color: var(--text); line-height: 1.45;
+    padding-right: 22px;
+  }
+  .log-pill-delete {
+    position: absolute; top: 6px; right: 8px;
+    background: transparent; border: none;
+    color: var(--text-faint);
+    cursor: pointer; padding: 0 4px;
+    font-size: 16px; line-height: 1;
+    z-index: 3;
+  }
+  .log-pill-delete:hover { color: var(--loss); background: transparent; border: none; }
+
+  /* ── Move logger CTAs (re-style existing .move-log-btn into glass) ── */
+  .move-loggers {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .move-loggers .move-log-btn {
+    position: relative;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 10px;
+    border: 1px solid rgba(255, 203, 5, 0.30);
+    background:
+      linear-gradient(180deg, rgba(255, 203, 5, 0.12) 0%, rgba(255, 203, 5, 0.04) 100%);
+    color: var(--accent);
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 2px 10px rgba(255, 203, 5, 0.10);
+    overflow: hidden;
+    transition: all 0.22s var(--ease);
+  }
+  .move-loggers .move-log-btn::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 100%);
+    pointer-events: none; border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+  .move-loggers .move-log-btn > * { position: relative; z-index: 1; }
+  .move-loggers .move-log-btn:hover { transform: translateY(-1px); background: linear-gradient(180deg, rgba(255, 203, 5, 0.18) 0%, rgba(255, 203, 5, 0.06) 100%); }
+  .move-loggers .move-log-btn:active { transform: scale(0.98); }
+  .move-loggers .move-log-btn.move-log-btn-theirs {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.04) 100%);
+    color: var(--accent-2-text);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 2px 10px rgba(239, 68, 68, 0.10);
+  }
+  .move-loggers .move-log-btn.move-log-btn-theirs:hover {
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.06) 100%);
+  }
+  .move-loggers .move-log-icon { font-size: 15px; }
+
+  /* ── OR divider ── */
+  .or-divider {
+    display: flex; align-items: center;
+    margin: 8px 0 10px;
+    text-align: center;
+  }
+  .or-divider::before,
+  .or-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+  .or-divider span {
+    padding: 0 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.18em;
+  }
+
+  /* ── Composer dock ── */
+  .composer {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 30%, transparent 70%),
+      rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--radius-lg);
+    padding: 10px;
+    backdrop-filter: blur(38px) saturate(220%);
+    -webkit-backdrop-filter: blur(38px) saturate(220%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 -1px 0 rgba(0,0,0,0.20) inset,
+      0 6px 20px rgba(0,0,0,0.30);
+    position: relative; overflow: hidden;
+  }
+  :root[data-theme="light"] .composer {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.70) 100%),
+      rgba(255, 255, 255, 0.50);
+    border-color: rgba(0,0,0,0.10);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.95) inset,
+      0 1px 3px rgba(0,0,0,0.06),
+      0 6px 20px rgba(0,0,0,0.06);
+  }
+  .composer::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
+    background: var(--specular-top); pointer-events: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .composer > * { position: relative; z-index: 1; }
+
+  /* Composer tag picker — same sliding-indicator pattern as mode tabs */
+  .composer-tags {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    margin-bottom: 10px;
+    padding: 4px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 40%, transparent 80%),
+      rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-pill);
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 1px 2px rgba(0,0,0,0.20);
+    position: relative;
+    overflow: hidden;
+  }
+  :root[data-theme="light"] .composer-tags {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.60) 40%, rgba(255,255,255,0.40) 100%),
+      rgba(255, 255, 255, 0.40);
+    border-color: rgba(0,0,0,0.10);
+  }
+  .composer-tag-indicator {
+    position: absolute;
+    top: 4px; bottom: 4px; left: 4px;
+    width: calc((100% - 8px) / 6);
+    border-radius: var(--radius-pill);
+    background:
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--tag-color, #fff) 42%, transparent) 0%,
+        color-mix(in srgb, var(--tag-color, #fff) 14%, transparent) 50%,
+        color-mix(in srgb, var(--tag-color, #fff)  4%, transparent) 100%);
+    box-shadow:
+      0 1px 0 color-mix(in srgb, var(--tag-color, #fff) 55%, white) inset,
+      0 -1px 0 rgba(0,0,0,0.08) inset,
+      0 1px 6px color-mix(in srgb, var(--tag-color, #fff) 30%, transparent),
+      0 0 16px color-mix(in srgb, var(--tag-color, #fff) 22%, transparent);
+    transform: translateX(calc(var(--idx, 0) * 100%));
+    transition:
+      transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+      background 0.30s var(--ease),
+      box-shadow 0.30s var(--ease),
+      opacity 0.30s var(--ease);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+  }
+  .composer-tags:hover .composer-tag-indicator,
+  .composer-tags[data-has-tag="1"] .composer-tag-indicator { opacity: 1; }
+  .composer-tags::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+    background: var(--specular-top); pointer-events: none;
+    border-radius: var(--radius-pill) var(--radius-pill) 0 0;
+  }
+
+  /* Re-style existing .tag-btn inside the new composer-tags context */
+  .composer-tags .tag-btn {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 6px 2px 5px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    border-radius: var(--radius-pill);
+    cursor: pointer; font-family: inherit;
+    transition: color 0.22s var(--ease), transform 0.10s var(--ease);
+    box-shadow: none;
+    min-height: 0;
+  }
+  .composer-tags .tag-btn .tag-emoji {
+    font-size: 14px; line-height: 1;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.30));
+    transition: filter 0.30s var(--ease);
+    margin-bottom: 0;
+  }
+  .composer-tags .tag-btn:hover { color: var(--text); border-color: transparent; background: transparent; }
+  .composer-tags .tag-btn:active { transform: scale(0.94); }
+  .composer-tags .tag-btn.lit,
+  .composer-tags .tag-btn.selected {
+    color: var(--text);
+    background: transparent;
+    box-shadow: none;
+  }
+  .composer-tags .tag-btn.lit .tag-emoji {
+    filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--tag-color, white) 50%, transparent));
+  }
+
+  .composer-input-row { display: flex; align-items: stretch; gap: 8px; }
+  .composer .composer-input {
+    flex: 1; min-width: 0; width: auto;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 100%);
+    border: 1px solid rgba(255,255,255,0.40);
+    color: #1a1410;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    outline: none;
+    border-radius: var(--radius-pill);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,1) inset,
+      0 1px 2px rgba(0,0,0,0.10) inset,
+      0 2px 6px rgba(0,0,0,0.18);
+    transition: all 0.22s var(--ease);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .composer .composer-input:focus {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.96) 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,1) inset,
+      0 1px 2px rgba(0,0,0,0.10) inset,
+      0 0 0 3px var(--accent-glow);
+  }
+  .composer .composer-input::placeholder {
+    color: rgba(26, 20, 16, 0.50);
+    font-family: -apple-system, sans-serif;
+  }
+  .composer-add {
+    flex-shrink: 0;
+    width: 44px; height: 44px;
+    background: linear-gradient(180deg, #ffe066 0%, var(--accent) 100%);
+    color: #1a1410;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    font-size: 22px; font-weight: 300;
+    line-height: 1;
+    cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.40) inset,
+      0 -1px 0 rgba(0,0,0,0.10) inset,
+      0 4px 14px var(--accent-glow),
+      0 2px 4px rgba(0,0,0,0.30);
+    transition: all 0.22s var(--ease);
+    padding: 0;
+  }
+  .composer-add:hover { transform: translateY(-1px); background: linear-gradient(180deg, #fff099 0%, #ffd219 100%); }
+  .composer-add:active { transform: scale(0.94); }
 
   /* === Best-of-3 game tabs (glass-pill segmented, matches .mode-tabs) === */
   .game-tabs-wrap {
@@ -2245,8 +2958,9 @@
     </div>
   </header>
 
-  <div class="mode-tabs">
-    <button class="mode-tab active" data-mode="quick" onclick="setMode('quick')">⚡ Capture</button>
+  <div class="mode-tabs" id="mode-tabs">
+    <div class="mode-tab-indicator"></div>
+    <button class="mode-tab active lit" data-mode="quick" onclick="setMode('quick')">⚡ Capture</button>
     <button class="mode-tab" data-mode="reflect" onclick="setMode('reflect')">🧠 Reflect</button>
     <button class="mode-tab" data-mode="research" onclick="setMode('research')">🛡️ Research</button>
   </div>
@@ -2352,58 +3066,130 @@
   </div>
 
   <div class="card match-context">
-    <div class="card-title">Opponent's Team</div>
-    <div class="team-slots">
-      <div class="opp-slot-block">
-        <div class="opp-slot-wrap">
-          <input class="team-slot" id="opp-1" placeholder="Slot 1" list="pkmn-list" />
-          <button type="button" class="opp-brought-btn" id="opp-brought-1" onclick="toggleBrought(0)" title="Mark as brought to battle"></button>
-          <button type="button" class="opp-scout-btn" id="opp-scout-btn-1" onclick="openScoutModal(0)" title="Add scout intel">📝</button>
+    <div class="card-title">Opponent's Team<span class="hint" id="opp-brought-count"></span></div>
+    <div class="opp-tiles">
+      <div class="opp-tile" id="opp-tile-1" data-spotlight>
+        <div class="opp-tile-edge"></div>
+        <div class="opp-tile-glint"></div>
+        <div class="opp-tile-head">
+          <input class="opp-tile-input" id="opp-1" placeholder="Slot 1" list="pkmn-list" autocomplete="off" />
+          <div class="opp-tile-types" id="opp-type-chips-1"></div>
         </div>
-        <div class="opp-scout-chips" id="opp-scout-chips-1"></div>
+        <div class="opp-tile-foot">
+          <button type="button" class="opp-tile-brought" id="opp-brought-1" onclick="toggleBrought(0)" aria-pressed="false" title="Mark as brought to battle">
+            <span class="opp-tile-brought-dot"></span>
+            <span class="opp-tile-brought-label" id="opp-brought-label-1">Bring?</span>
+          </button>
+          <button type="button" class="opp-tile-scout" id="opp-scout-btn-1" onclick="openScoutModal(0)" title="Add scout intel">
+            <span class="opp-tile-scout-icon">📝</span>
+            <span class="opp-tile-scout-label" id="opp-scout-label-1">Add scout intel</span>
+            <span class="opp-tile-scout-chev">›</span>
+          </button>
+        </div>
+        <div class="opp-tile-intel" id="opp-scout-chips-1"></div>
       </div>
-      <div class="opp-slot-block">
-        <div class="opp-slot-wrap">
-          <input class="team-slot" id="opp-2" placeholder="Slot 2" list="pkmn-list" />
-          <button type="button" class="opp-brought-btn" id="opp-brought-2" onclick="toggleBrought(1)" title="Mark as brought to battle"></button>
-          <button type="button" class="opp-scout-btn" id="opp-scout-btn-2" onclick="openScoutModal(1)" title="Add scout intel">📝</button>
+      <div class="opp-tile" id="opp-tile-2" data-spotlight>
+        <div class="opp-tile-edge"></div>
+        <div class="opp-tile-glint"></div>
+        <div class="opp-tile-head">
+          <input class="opp-tile-input" id="opp-2" placeholder="Slot 2" list="pkmn-list" autocomplete="off" />
+          <div class="opp-tile-types" id="opp-type-chips-2"></div>
         </div>
-        <div class="opp-scout-chips" id="opp-scout-chips-2"></div>
+        <div class="opp-tile-foot">
+          <button type="button" class="opp-tile-brought" id="opp-brought-2" onclick="toggleBrought(1)" aria-pressed="false" title="Mark as brought to battle">
+            <span class="opp-tile-brought-dot"></span>
+            <span class="opp-tile-brought-label" id="opp-brought-label-2">Bring?</span>
+          </button>
+          <button type="button" class="opp-tile-scout" id="opp-scout-btn-2" onclick="openScoutModal(1)" title="Add scout intel">
+            <span class="opp-tile-scout-icon">📝</span>
+            <span class="opp-tile-scout-label" id="opp-scout-label-2">Add scout intel</span>
+            <span class="opp-tile-scout-chev">›</span>
+          </button>
+        </div>
+        <div class="opp-tile-intel" id="opp-scout-chips-2"></div>
       </div>
-      <div class="opp-slot-block">
-        <div class="opp-slot-wrap">
-          <input class="team-slot" id="opp-3" placeholder="Slot 3" list="pkmn-list" />
-          <button type="button" class="opp-brought-btn" id="opp-brought-3" onclick="toggleBrought(2)" title="Mark as brought to battle"></button>
-          <button type="button" class="opp-scout-btn" id="opp-scout-btn-3" onclick="openScoutModal(2)" title="Add scout intel">📝</button>
+      <div class="opp-tile" id="opp-tile-3" data-spotlight>
+        <div class="opp-tile-edge"></div>
+        <div class="opp-tile-glint"></div>
+        <div class="opp-tile-head">
+          <input class="opp-tile-input" id="opp-3" placeholder="Slot 3" list="pkmn-list" autocomplete="off" />
+          <div class="opp-tile-types" id="opp-type-chips-3"></div>
         </div>
-        <div class="opp-scout-chips" id="opp-scout-chips-3"></div>
+        <div class="opp-tile-foot">
+          <button type="button" class="opp-tile-brought" id="opp-brought-3" onclick="toggleBrought(2)" aria-pressed="false" title="Mark as brought to battle">
+            <span class="opp-tile-brought-dot"></span>
+            <span class="opp-tile-brought-label" id="opp-brought-label-3">Bring?</span>
+          </button>
+          <button type="button" class="opp-tile-scout" id="opp-scout-btn-3" onclick="openScoutModal(2)" title="Add scout intel">
+            <span class="opp-tile-scout-icon">📝</span>
+            <span class="opp-tile-scout-label" id="opp-scout-label-3">Add scout intel</span>
+            <span class="opp-tile-scout-chev">›</span>
+          </button>
+        </div>
+        <div class="opp-tile-intel" id="opp-scout-chips-3"></div>
       </div>
-      <div class="opp-slot-block">
-        <div class="opp-slot-wrap">
-          <input class="team-slot" id="opp-4" placeholder="Slot 4" list="pkmn-list" />
-          <button type="button" class="opp-brought-btn" id="opp-brought-4" onclick="toggleBrought(3)" title="Mark as brought to battle"></button>
-          <button type="button" class="opp-scout-btn" id="opp-scout-btn-4" onclick="openScoutModal(3)" title="Add scout intel">📝</button>
+      <div class="opp-tile" id="opp-tile-4" data-spotlight>
+        <div class="opp-tile-edge"></div>
+        <div class="opp-tile-glint"></div>
+        <div class="opp-tile-head">
+          <input class="opp-tile-input" id="opp-4" placeholder="Slot 4" list="pkmn-list" autocomplete="off" />
+          <div class="opp-tile-types" id="opp-type-chips-4"></div>
         </div>
-        <div class="opp-scout-chips" id="opp-scout-chips-4"></div>
+        <div class="opp-tile-foot">
+          <button type="button" class="opp-tile-brought" id="opp-brought-4" onclick="toggleBrought(3)" aria-pressed="false" title="Mark as brought to battle">
+            <span class="opp-tile-brought-dot"></span>
+            <span class="opp-tile-brought-label" id="opp-brought-label-4">Bring?</span>
+          </button>
+          <button type="button" class="opp-tile-scout" id="opp-scout-btn-4" onclick="openScoutModal(3)" title="Add scout intel">
+            <span class="opp-tile-scout-icon">📝</span>
+            <span class="opp-tile-scout-label" id="opp-scout-label-4">Add scout intel</span>
+            <span class="opp-tile-scout-chev">›</span>
+          </button>
+        </div>
+        <div class="opp-tile-intel" id="opp-scout-chips-4"></div>
       </div>
-      <div class="opp-slot-block">
-        <div class="opp-slot-wrap">
-          <input class="team-slot" id="opp-5" placeholder="Slot 5" list="pkmn-list" />
-          <button type="button" class="opp-brought-btn" id="opp-brought-5" onclick="toggleBrought(4)" title="Mark as brought to battle"></button>
-          <button type="button" class="opp-scout-btn" id="opp-scout-btn-5" onclick="openScoutModal(4)" title="Add scout intel">📝</button>
+      <div class="opp-tile" id="opp-tile-5" data-spotlight>
+        <div class="opp-tile-edge"></div>
+        <div class="opp-tile-glint"></div>
+        <div class="opp-tile-head">
+          <input class="opp-tile-input" id="opp-5" placeholder="Slot 5" list="pkmn-list" autocomplete="off" />
+          <div class="opp-tile-types" id="opp-type-chips-5"></div>
         </div>
-        <div class="opp-scout-chips" id="opp-scout-chips-5"></div>
+        <div class="opp-tile-foot">
+          <button type="button" class="opp-tile-brought" id="opp-brought-5" onclick="toggleBrought(4)" aria-pressed="false" title="Mark as brought to battle">
+            <span class="opp-tile-brought-dot"></span>
+            <span class="opp-tile-brought-label" id="opp-brought-label-5">Bring?</span>
+          </button>
+          <button type="button" class="opp-tile-scout" id="opp-scout-btn-5" onclick="openScoutModal(4)" title="Add scout intel">
+            <span class="opp-tile-scout-icon">📝</span>
+            <span class="opp-tile-scout-label" id="opp-scout-label-5">Add scout intel</span>
+            <span class="opp-tile-scout-chev">›</span>
+          </button>
+        </div>
+        <div class="opp-tile-intel" id="opp-scout-chips-5"></div>
       </div>
-      <div class="opp-slot-block">
-        <div class="opp-slot-wrap">
-          <input class="team-slot" id="opp-6" placeholder="Slot 6" list="pkmn-list" />
-          <button type="button" class="opp-brought-btn" id="opp-brought-6" onclick="toggleBrought(5)" title="Mark as brought to battle"></button>
-          <button type="button" class="opp-scout-btn" id="opp-scout-btn-6" onclick="openScoutModal(5)" title="Add scout intel">📝</button>
+      <div class="opp-tile" id="opp-tile-6" data-spotlight>
+        <div class="opp-tile-edge"></div>
+        <div class="opp-tile-glint"></div>
+        <div class="opp-tile-head">
+          <input class="opp-tile-input" id="opp-6" placeholder="Slot 6" list="pkmn-list" autocomplete="off" />
+          <div class="opp-tile-types" id="opp-type-chips-6"></div>
         </div>
-        <div class="opp-scout-chips" id="opp-scout-chips-6"></div>
+        <div class="opp-tile-foot">
+          <button type="button" class="opp-tile-brought" id="opp-brought-6" onclick="toggleBrought(5)" aria-pressed="false" title="Mark as brought to battle">
+            <span class="opp-tile-brought-dot"></span>
+            <span class="opp-tile-brought-label" id="opp-brought-label-6">Bring?</span>
+          </button>
+          <button type="button" class="opp-tile-scout" id="opp-scout-btn-6" onclick="openScoutModal(5)" title="Add scout intel">
+            <span class="opp-tile-scout-icon">📝</span>
+            <span class="opp-tile-scout-label" id="opp-scout-label-6">Add scout intel</span>
+            <span class="opp-tile-scout-chev">›</span>
+          </button>
+        </div>
+        <div class="opp-tile-intel" id="opp-scout-chips-6"></div>
       </div>
     </div>
-    <div class="opp-brought-hint">Tap ▶ when they bring a Pokémon to battle. Threat coverage narrows to brought-only.</div>
+    <div class="opp-brought-hint">Tap Bring? when they send a Pokémon to battle. Threat coverage narrows to brought-only.</div>
   </div>
 
   <!-- ============== THREAT COVERAGE (auto-shows when opponent is filled) ============== -->
@@ -2423,40 +3209,47 @@
   <!-- ============== QUICK CAPTURE MODE ============== -->
   <div id="mode-quick">
     <div class="card">
-      <div class="card-title">Live Log</div>
-      <div class="log-entries" id="log-list">
+      <div class="card-title">Live Log<span class="hint" id="log-count-hint"></span></div>
+      <div class="log-list" id="log-list">
         <div class="log-empty">No entries yet — tap a tag, type your note, hit Add.</div>
       </div>
 
-      <div class="tag-grid">
-        <button class="tag-btn" data-tag="read" onclick="selectTag('read')">
-          <span class="tag-emoji">🎯</span><span>Read</span>
+      <div class="move-loggers">
+        <button type="button" class="move-log-btn move-log-btn-mine" onclick="openMyMoveLogger()">
+          <span class="move-log-icon">⚡</span><span>My Move</span>
         </button>
-        <button class="tag-btn" data-tag="misplay" onclick="selectTag('misplay')">
-          <span class="tag-emoji">❌</span><span>Misplay</span>
-        </button>
-        <button class="tag-btn" data-tag="lucky" onclick="selectTag('lucky')">
-          <span class="tag-emoji">🍀</span><span>Luck</span>
-        </button>
-        <button class="tag-btn" data-tag="threat" onclick="selectTag('threat')">
-          <span class="tag-emoji">⚠️</span><span>Threat</span>
-        </button>
-        <button class="tag-btn" data-tag="tech" onclick="selectTag('tech')">
-          <span class="tag-emoji">🔍</span><span>Tech</span>
-        </button>
-        <button class="tag-btn" data-tag="idea" onclick="selectTag('idea')">
-          <span class="tag-emoji">💡</span><span>Idea</span>
+        <button type="button" class="move-log-btn move-log-btn-theirs" onclick="openTheirMoveLogger()">
+          <span class="move-log-icon">⚠️</span><span>Their Move</span>
         </button>
       </div>
+      <div class="or-divider"><span>or note anything</span></div>
 
-      <div class="move-log-buttons">
-        <button type="button" class="move-log-btn move-log-btn-mine" onclick="openMyMoveLogger()">⚡ My Move</button>
-        <button type="button" class="move-log-btn move-log-btn-theirs" onclick="openTheirMoveLogger()">⚠️ Their Move</button>
-      </div>
-      <div class="move-log-or">or note anything</div>
-      <div class="quick-add">
-        <input type="text" id="quick-input" placeholder="Free-text note (Enter to add)" />
-        <button class="btn-accent" onclick="addLogEntry()">Add</button>
+      <div class="composer">
+        <div class="composer-tags" id="composer-tags">
+          <div class="composer-tag-indicator"></div>
+          <button class="tag-btn" data-tag="read" onclick="selectTag('read')">
+            <span class="tag-emoji">🎯</span><span>Read</span>
+          </button>
+          <button class="tag-btn" data-tag="misplay" onclick="selectTag('misplay')">
+            <span class="tag-emoji">❌</span><span>Misplay</span>
+          </button>
+          <button class="tag-btn" data-tag="lucky" onclick="selectTag('lucky')">
+            <span class="tag-emoji">🍀</span><span>Luck</span>
+          </button>
+          <button class="tag-btn" data-tag="threat" onclick="selectTag('threat')">
+            <span class="tag-emoji">⚠️</span><span>Threat</span>
+          </button>
+          <button class="tag-btn" data-tag="tech" onclick="selectTag('tech')">
+            <span class="tag-emoji">🔍</span><span>Tech</span>
+          </button>
+          <button class="tag-btn" data-tag="idea" onclick="selectTag('idea')">
+            <span class="tag-emoji">💡</span><span>Idea</span>
+          </button>
+        </div>
+        <div class="composer-input-row">
+          <input type="text" id="quick-input" class="composer-input" placeholder="What just happened?" />
+          <button type="button" class="composer-add" onclick="addLogEntry()" aria-label="Add log entry">＋</button>
+        </div>
       </div>
     </div>
   </div>
@@ -4568,14 +5361,23 @@ function toggleBrought(idx) {
 
 function renderBroughtToggles() {
   const g = getActiveGame();
+  let count = 0;
   for (let i = 0; i < 6; i++) {
-    const btn = document.getElementById(`opp-brought-${i+1}`);
-    if (!btn) continue;
+    const tileEl = document.getElementById(`opp-tile-${i+1}`);
+    const btnEl = document.getElementById(`opp-brought-${i+1}`);
+    const labelEl = document.getElementById(`opp-brought-label-${i+1}`);
+    if (!btnEl) continue;
     const isBrought = !!g.oppBrought[i];
     const hasName = !!(state.opp[i] && state.opp[i].trim());
-    btn.classList.toggle('is-brought', isBrought && hasName);
-    btn.disabled = !hasName;
+    const lit = isBrought && hasName;
+    btnEl.disabled = !hasName;
+    btnEl.setAttribute('aria-pressed', lit ? 'true' : 'false');
+    if (tileEl) tileEl.classList.toggle('is-brought', lit);
+    if (labelEl) labelEl.textContent = lit ? 'Brought' : 'Bring?';
+    if (lit) count++;
   }
+  const countEl = document.getElementById('opp-brought-count');
+  if (countEl) countEl.textContent = count > 0 ? ` ${count}/6 brought` : '';
 }
 
 // ============ MOVE LOGGER STATE ============
@@ -4726,7 +5528,7 @@ function confirmMyMove() {
   getActiveGame().log.push({ tag: currentTag, text, time, ts: Date.now(), kind: 'my-move' });
   if (notesEl) notesEl.value = '';
   currentTag = null;
-  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+  refreshComposerTagState();
   renderLog();
   scheduleSave();
   closeModal('modal-move-mine');
@@ -4819,7 +5621,7 @@ function confirmTheirMove() {
   getActiveGame().log.push({ tag: currentTag || 'threat', text, time, ts: Date.now(), kind: 'their-move' });
   if (notesEl) notesEl.value = '';
   currentTag = null;
-  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+  refreshComposerTagState();
   renderLog();
   scheduleSave();
   closeModal('modal-move-theirs');
@@ -5014,11 +5816,20 @@ function scheduleSave() {
 }
 
 // ============ MODE ============
+const MODE_ORDER = ['quick', 'reflect', 'research'];
+
 function setMode(mode) {
   state.mode = mode;
   document.querySelectorAll('.mode-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.mode === mode);
+    const isActive = b.dataset.mode === mode;
+    b.classList.toggle('active', isActive);
+    b.classList.toggle('lit', isActive);  // .lit follows .active when no hover preview
   });
+  const modeTabs = document.getElementById('mode-tabs');
+  if (modeTabs) {
+    const idx = MODE_ORDER.indexOf(mode);
+    if (idx >= 0) modeTabs.style.setProperty('--idx', String(idx));
+  }
   document.getElementById('mode-quick').classList.toggle('hidden', mode !== 'quick');
   document.getElementById('mode-reflect').classList.toggle('hidden', mode !== 'reflect');
   document.getElementById('mode-research').classList.toggle('hidden', mode !== 'research');
@@ -5029,6 +5840,73 @@ function setMode(mode) {
   // Hide save bar in Research mode (it has its own inline actions)
   document.getElementById('save-bar').classList.toggle('hidden', mode === 'research');
   scheduleSave();
+}
+
+// ============ CAPTURE V2: GLASS HELPERS ============
+
+// Tag metadata used by renderLog (entry emoji + color glow) and the composer
+// sliding indicator (color the indicator picks up as it lands on a tag).
+const TAG_META = {
+  read:    { emoji: '🎯', color: '#38bdf8',         label: 'Read'    },
+  misplay: { emoji: '❌', color: 'var(--accent-2)', label: 'Misplay' },
+  lucky:   { emoji: '🍀', color: 'var(--accent)',   label: 'Luck'    },
+  threat:  { emoji: '⚠️', color: '#a78bfa',         label: 'Threat'  },
+  tech:    { emoji: '🔍', color: '#f472b6',         label: 'Tech'    },
+  idea:    { emoji: '💡', color: '#4ade80',         label: 'Idea'    },
+};
+const TAG_ORDER = ['read', 'misplay', 'lucky', 'threat', 'tech', 'idea'];
+
+// Cursor-tracking spotlight — delegated mousemove sets --mx/--my CSS vars on
+// any [data-spotlight] ancestor so the element's ::after radial bloom follows
+// the pointer. The signature iOS 26 Liquid Glass gesture.
+function setupSpotlight() {
+  document.addEventListener('mousemove', e => {
+    const el = e.target && e.target.closest && e.target.closest('[data-spotlight]');
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    el.style.setProperty('--my', `${e.clientY - r.top}px`);
+  }, { passive: true });
+}
+
+// Sync the composer's sliding indicator + .lit/.selected classes to the
+// committed `currentTag`. When currentTag is null the indicator hides (CSS
+// gates opacity on the data-has-tag attribute + :hover).
+function refreshComposerTagState() {
+  const container = document.getElementById('composer-tags');
+  if (!container) return;
+  if (currentTag) {
+    container.setAttribute('data-has-tag', '1');
+    const idx = TAG_ORDER.indexOf(currentTag);
+    if (idx >= 0) container.style.setProperty('--idx', String(idx));
+    const meta = TAG_META[currentTag];
+    if (meta) container.style.setProperty('--tag-color', meta.color);
+  } else {
+    container.removeAttribute('data-has-tag');
+  }
+  container.querySelectorAll('.tag-btn').forEach(b => {
+    const match = b.dataset.tag === currentTag;
+    b.classList.toggle('selected', match);
+    b.classList.toggle('lit', match);
+  });
+}
+
+// Render the small type-chip pair inside an opp tile based on the typed name.
+function renderOppTypeChips(idx) {
+  const container = document.getElementById(`opp-type-chips-${idx + 1}`);
+  if (!container) return;
+  const name = state.opp[idx] || '';
+  const types = lookupTypes(name);
+  if (!types || types.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = types.map(t =>
+    `<span class="type-chip type-chip-${t}">${escapeHtml(TYPE_LABEL[t] || t)}</span>`
+  ).join('');
+}
+function renderAllOppTypeChips() {
+  for (let i = 0; i < 6; i++) renderOppTypeChips(i);
 }
 
 // ============ FORM BINDINGS ============
@@ -5066,6 +5944,7 @@ function bindTeamSlot(id, arr, idx) {
       if (!el.value || !el.value.trim()) g.oppBrought[idx] = false;
       renderBroughtToggles();
       renderThreatBar();
+      renderOppTypeChips(idx);
     } else if (arr === 'leads' || arr === 'backs') {
       const g = getActiveGame();
       g[arr][idx] = el.value;
@@ -5179,9 +6058,7 @@ function addGame() {
 // ============ LOG ============
 function selectTag(tag) {
   currentTag = (currentTag === tag) ? null : tag;
-  document.querySelectorAll('.tag-btn').forEach(b => {
-    b.classList.toggle('selected', b.dataset.tag === currentTag);
-  });
+  refreshComposerTagState();
 }
 
 function addLogEntry() {
@@ -5197,7 +6074,7 @@ function addLogEntry() {
   });
   input.value = '';
   currentTag = null;
-  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+  refreshComposerTagState();
   renderLog();
   scheduleSave();
   input.focus();
@@ -5212,18 +6089,35 @@ function deleteLog(idx) {
 function renderLog() {
   const list = document.getElementById('log-list');
   const log = getActiveGame().log;
+  const countEl = document.getElementById('log-count-hint');
+  if (countEl) {
+    countEl.textContent = log.length > 0
+      ? `${log.length} ${log.length === 1 ? 'entry' : 'entries'}`
+      : '';
+  }
   if (log.length === 0) {
     list.innerHTML = '<div class="log-empty">No entries yet — tap a tag, type your note, hit Add.</div>';
     return;
   }
   list.innerHTML = log.map((e, idx) => {
-    const tagClass = e.tag ? `tag-${e.tag}` : '';
-    const tagLabel = e.tag ? `<span class="log-tag">${e.tag}</span>` : '';
+    const meta = e.tag ? TAG_META[e.tag] : null;
+    const tagColor = meta ? meta.color : 'transparent';
+    const head = meta
+      ? `<div class="log-pill-head">
+           <span class="log-pill-tag">
+             <span class="log-pill-emoji">${meta.emoji}</span>
+             <span>${meta.label.toUpperCase()}</span>
+           </span>
+           <span class="log-pill-time">${escapeHtml(e.time || '')}</span>
+         </div>`
+      : `<div class="log-pill-head">
+           <span class="log-pill-time">${escapeHtml(e.time || '')}</span>
+         </div>`;
     return `
-      <div class="log-entry ${tagClass}">
-        ${tagLabel}
-        <div class="log-text"><strong style="color:var(--text-faint);font-size:11px;font-family:'JetBrains Mono',monospace;">${e.time}</strong> ${escapeHtml(e.text)}</div>
-        <button class="log-delete" onclick="deleteLog(${idx})" title="Delete">×</button>
+      <div class="log-pill" style="--tag-color: ${tagColor};" data-spotlight>
+        ${head}
+        <div class="log-pill-text">${escapeHtml(e.text)}</div>
+        <button class="log-pill-delete" onclick="deleteLog(${idx})" title="Delete">×</button>
       </div>`;
   }).join('');
 }
@@ -5250,6 +6144,7 @@ function renderAll() {
   }
   for (let i = 0; i < 6; i++) document.getElementById(`opp-${i+1}`).value = state.opp[i] || '';
   renderBroughtToggles();
+  renderAllOppTypeChips();
   ensureScoutState();
   renderAllScoutChips();
   updateMyTeamMode();
@@ -6582,8 +7477,11 @@ function scoutHasData(idx) {
 
 function renderScoutButton(idx) {
   const btn = document.getElementById(`opp-scout-btn-${idx + 1}`);
+  const labelEl = document.getElementById(`opp-scout-label-${idx + 1}`);
   if (!btn) return;
-  btn.classList.toggle('has-data', scoutHasData(idx));
+  const has = scoutHasData(idx);
+  btn.classList.toggle('has-data', has);
+  if (labelEl) labelEl.textContent = has ? 'Scout intel' : 'Add scout intel';
 }
 
 function renderScoutChips(idx) {
@@ -6685,6 +7583,43 @@ function init() {
         e.preventDefault();
         confirmTheirMove();
       }
+    });
+  }
+
+  // Capture v2 — cursor-tracking spotlight (delegated, picks up any [data-spotlight])
+  setupSpotlight();
+
+  // Mode tabs: sliding indicator with hover-preview / click-commit
+  const modeTabsEl = document.getElementById('mode-tabs');
+  if (modeTabsEl) {
+    const tabs = Array.from(modeTabsEl.querySelectorAll('.mode-tab'));
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('mouseenter', () => {
+        modeTabsEl.style.setProperty('--idx', String(i));
+        tabs.forEach((t, j) => t.classList.toggle('lit', j === i));
+      });
+    });
+    modeTabsEl.addEventListener('mouseleave', () => {
+      const activeIdx = Math.max(0, MODE_ORDER.indexOf(state.mode || 'quick'));
+      modeTabsEl.style.setProperty('--idx', String(activeIdx));
+      tabs.forEach((t, j) => t.classList.toggle('lit', j === activeIdx));
+    });
+  }
+
+  // Composer tag picker: sliding indicator with hover-preview / click-commit
+  const composerTagsEl = document.getElementById('composer-tags');
+  if (composerTagsEl) {
+    const tagBtns = Array.from(composerTagsEl.querySelectorAll('.tag-btn'));
+    tagBtns.forEach((btn, i) => {
+      btn.addEventListener('mouseenter', () => {
+        composerTagsEl.style.setProperty('--idx', String(i));
+        const meta = TAG_META[btn.dataset.tag];
+        if (meta) composerTagsEl.style.setProperty('--tag-color', meta.color);
+        tagBtns.forEach((b, j) => b.classList.toggle('lit', j === i));
+      });
+    });
+    composerTagsEl.addEventListener('mouseleave', () => {
+      refreshComposerTagState();
     });
   }
 
