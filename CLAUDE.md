@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-file, no-build, vanilla-JS web app for logging competitive Pokémon Champions VGC matches. The entire app — HTML, CSS, JS, embedded reference data — lives in `champions-match-notes.html` (~225 KB, ~6.5k lines). Deployed to https://pokepicker.netlify.app via Netlify Drop (drag-and-drop, no CI). Used on iPad and Mac Safari; designed to also work as an iOS home-screen standalone app.
+A single-file, no-build, vanilla-JS web app for logging competitive Pokémon Champions VGC matches. The entire app — HTML, CSS, JS, embedded reference data — lives in `index.html` (~225 KB, ~6.5k lines). Source lives at https://github.com/NathanGugliotta/PokePicker; deploys to https://pokepicker.netlify.app via Netlify auto-build on every push to `main` (no CI step, the repo root *is* the published site). Used on iPad and Mac Safari; designed to also work as an iOS home-screen standalone app.
 
 Built by and for Nathan, a competitive VGC player and senior trademark attorney — knows the game deeply, newer to web dev. Explain dev concepts (Git, modules, build steps) when introducing them; don't over-explain things he clearly already gets. He has ADHD and gets overwhelmed by jargon — keep technical terms grounded.
 
@@ -30,7 +30,7 @@ Pokémon Champions launched April 2026 as the official competitive VGC platform,
 - **iOS Safari is the primary target.** Avoid APIs unavailable in standalone-mode Safari; keep `localStorage` writes resilient (all storage calls are already try/catch-wrapped — preserve that).
 - **Don't break the single-file deploy path** unless we're explicitly transitioning to a modular structure.
 
-## File layout inside `champions-match-notes.html`
+## File layout inside `index.html`
 
 Major boundaries (line numbers approximate):
 - `<style>` block: 11–2099 — CSS custom-property theme tokens for `dark` / `light` (set via `:root[data-theme="..."]`), plus all component styles
@@ -118,7 +118,7 @@ Inspired by Phil Wingett / THATSAplusONE coaching frame:
 
 ## Workflow
 
-- **Deploy:** drag `champions-match-notes.html` to https://app.netlify.com/drop → updates https://pokepicker.netlify.app. No CI; no staging.
+- **Deploy:** `git push` to `main` on https://github.com/NathanGugliotta/PokePicker — Netlify auto-builds from the repo root and publishes to https://pokepicker.netlify.app within ~1 minute. No build step; no staging. The earlier Netlify Drop workflow is superseded — don't drag files into Drop anymore or it'll conflict with the Git pipeline.
 - **Edit cycle:** Claude Code edits the file directly. Show diffs before applying non-trivial changes — Nathan likes to see what's changing.
 - **Checkpoints:** small, focused commits with clear messages when a feature spans multiple steps.
 - **Verification:** Nathan reviews on iPad Safari + Mac Safari; cache is aggressive, hard refresh sometimes needed. Test light AND dark mode when touching CSS.
