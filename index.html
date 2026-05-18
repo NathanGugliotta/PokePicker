@@ -819,7 +819,8 @@
       0 1px 3px rgba(0,0,0,0.08),
       0 8px 22px rgba(0,0,0,0.10);
   }
-  .opp-tile:hover::after { opacity: 1; }
+  .opp-tile:hover::after,
+  .opp-tile:active::after { opacity: 1; }
 
   /* Edge light — 1px inner gradient stroke (top-left bright, bottom-right falloff) */
   .opp-tile-edge {
@@ -1144,7 +1145,8 @@
       0 4px 14px rgba(0,0,0,0.30),
       0 0 12px color-mix(in srgb, var(--tag-color, transparent) 15%, transparent);
   }
-  .log-pill:hover::after { opacity: 1; }
+  .log-pill:hover::after,
+  .log-pill:active::after { opacity: 1; }
   /* Left-edge tag-color accent (soft vertical glow, not a hard bar) */
   .log-pill::before {
     content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
@@ -6173,12 +6175,22 @@ const TAG_ORDER = ['read', 'misplay', 'lucky', 'threat', 'tech', 'idea'];
 // any [data-spotlight] ancestor so the element's ::after radial bloom follows
 // the pointer. The signature iOS 26 Liquid Glass gesture.
 function setupSpotlight() {
-  document.addEventListener('mousemove', e => {
+  // Pointer Events unify mouse (continuous tracking) + touch (during a drag)
+  // into one handler, so the bloom follows the cursor on Mac AND the finger
+  // on iPad/iPhone.
+  const positionBloom = (e) => {
     const el = e.target && e.target.closest && e.target.closest('[data-spotlight]');
     if (!el) return;
     const r = el.getBoundingClientRect();
     el.style.setProperty('--mx', `${e.clientX - r.left}px`);
     el.style.setProperty('--my', `${e.clientY - r.top}px`);
+  };
+  document.addEventListener('pointermove', positionBloom, { passive: true });
+  // pointerdown catches the initial touch position so even a brief tap
+  // (no drag) lights up the bloom at the right spot.
+  document.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return;  // mouse handled by pointermove
+    positionBloom(e);
   }, { passive: true });
 }
 
