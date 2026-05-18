@@ -7267,6 +7267,43 @@ function clearResearchTeam() {
   showToast('Active team cleared');
 }
 
+// Signature for team dedup: name + per-slot (species + ability + item +
+// alignment + sorted moves + SP). Item IS included since it's a per-team
+// choice (Mega Stone, Choice items, etc.). Mirror of buildSignature()
+// in the roster, but operating across all 6 slots at once.
+function teamSignature(t) {
+  const slotSigs = [];
+  for (let i = 0; i < 6; i++) {
+    const species = ((t.slots && t.slots[i]) || '').trim();
+    if (!species) continue;
+    const moves = ((t.slotsMoves && t.slotsMoves[i]) || [])
+      .filter(m => m && m.trim())
+      .map(m => m.trim().toLowerCase())
+      .sort()
+      .join('|');
+    const det = (t.slotsDetails && t.slotsDetails[i]) || {};
+    const sp = det.sp || {};
+    const spStr = `${sp.hp||0}/${sp.atk||0}/${sp.def||0}/${sp.spa||0}/${sp.spd||0}/${sp.spe||0}`;
+    slotSigs.push([
+      species.toLowerCase(),
+      (det.ability || '').trim().toLowerCase(),
+      (det.item || '').trim().toLowerCase(),
+      (det.alignment || '').trim().toLowerCase(),
+      moves,
+      spStr,
+    ].join(':'));
+  }
+  return [
+    (t.name || '').trim().toLowerCase(),
+    slotSigs.sort().join('|'),
+  ].join('::');
+}
+
+function findExistingTeam(snapshot) {
+  const sig = teamSignature(snapshot);
+  return listSavedTeams().find(t => teamSignature(t.data) === sig) || null;
+}
+
 function saveResearchTeam() {
   const name = (document.getElementById('t-name').value || '').trim();
   if (!name) {
@@ -7279,9 +7316,9 @@ function saveResearchTeam() {
     return;
   }
   researchTeam.name = name;
-  const id = 'team-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+
+  // Build the snapshot first so we can dedup-check before committing an ID.
   const snapshot = {
-    id: id,
     name: name,
     slots: [...researchTeam.slots],
     slotsMoves: researchTeam.slotsMoves ? researchTeam.slotsMoves.map(m => [...m]) : normalizeMoves([]),
@@ -7292,12 +7329,36 @@ function saveResearchTeam() {
       alignment: d.alignment || '',
       sp: { ...(d.sp || {hp:0,atk:0,def:0,spa:0,spd:0,spe:0}) },
     })) : normalizeDetails([]),
+  };
+
+  // Dedup: same name AND identical contents already saved? Prompt for
+  // confirmation so intentional duplicates are still possible — just no
+  // longer accidental from a double-tap of Save.
+  const dup = findExistingTeam(snapshot);
+  if (dup) {
+    const monCount = (dup.data.slots || []).filter(s => s && s.trim()).length;
+    const when = dup.data.created
+      ? new Date(dup.data.created).toLocaleString()
+      : 'an earlier time';
+    const ok = confirm(
+      `"${name}" is already saved with these exact contents (${monCount} Pokémon, saved ${when}). Save another copy anyway?`
+    );
+    if (!ok) {
+      showToast(`Already saved: ${name}`);
+      return;
+    }
+  }
+
+  const id = 'team-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  const finalSnapshot = {
+    id,
+    ...snapshot,
     created: Date.now(),
     updated: Date.now(),
     regulation: getCurrentRegulation(),
   };
   try {
-    localStorage.setItem(RESEARCH_PREFIX + id, JSON.stringify(snapshot));
+    localStorage.setItem(RESEARCH_PREFIX + id, JSON.stringify(finalSnapshot));
     saveResearchCurrent();
     showToast(`Saved: ${name}`);
   } catch (e) { showToast('Save failed'); }
