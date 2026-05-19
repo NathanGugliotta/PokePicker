@@ -8258,12 +8258,25 @@ function pokemonNameToSlug(displayName) {
   }
 
   // Default: lowercase, strip apostrophes/periods, spaces → hyphens
-  return lower
+  const defaultSlug = lower
     .replace(/[^a-z0-9 -]+/g, '')
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
+  // PokéAPI uses default-form slugs for multi-form species — bare
+  // 'aegislash' 404s because Aegislash is stored as 'aegislash-shield'.
+  // Same trap for several other dual-form species in M_A_POKEMON.
+  return POKEAPI_DEFAULT_FORME[defaultSlug] || defaultSlug;
 }
+
+const POKEAPI_DEFAULT_FORME = {
+  'aegislash':   'aegislash-shield',
+  'basculegion': 'basculegion-male',
+  'maushold':    'maushold-family-of-four',
+  'mimikyu':     'mimikyu-disguised',
+  'morpeko':     'morpeko-full-belly',
+  'palafin':     'palafin-zero',
+};
 
 // "rough-skin" → "Rough Skin"
 function formatAbilitySlug(slug) {
