@@ -1914,6 +1914,45 @@
     margin-bottom: 6px;
     background: var(--bg-elev);
   }
+  /* Pokémon sprite (PokéAPI, lazy-fetched + cached) — sits to the right of
+     the species input in each research slot. Dashed placeholder when empty,
+     solid border when a sprite has loaded. */
+  .research-slot-id-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .research-slot-id-row .team-slot {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+  .research-slot-sprite {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 40%, transparent 80%),
+      rgba(255,255,255,0.025);
+    border: 1px dashed var(--border-bright);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color 0.22s var(--ease), background 0.22s var(--ease);
+  }
+  .research-slot-sprite.has-sprite {
+    border-style: solid;
+    border-color: var(--border);
+  }
+  .research-slot-sprite img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: -webkit-optimize-contrast;
+  }
   .research-moves-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -3532,7 +3571,10 @@
       <div class="research-slots">
         <div class="research-slot-block">
           <input class="nickname-input" id="r-nickname-1" placeholder="Nickname (optional)" />
-          <input class="team-slot" id="r-slot-1" placeholder="Slot 1 — Pokémon" list="pkmn-list" />
+          <div class="research-slot-id-row">
+            <input class="team-slot" id="r-slot-1" placeholder="Slot 1 — Pokémon" list="pkmn-list" />
+            <div class="research-slot-sprite" id="r-sprite-1"></div>
+          </div>
           <div class="research-moves-row">
           <input class="research-move-input" id="r-move-1-1" placeholder="Move 1" list="moves-list" />
           <input class="research-move-input" id="r-move-1-2" placeholder="Move 2" list="moves-list" />
@@ -3570,7 +3612,10 @@
         </div>
         <div class="research-slot-block">
           <input class="nickname-input" id="r-nickname-2" placeholder="Nickname (optional)" />
-          <input class="team-slot" id="r-slot-2" placeholder="Slot 2 — Pokémon" list="pkmn-list" />
+          <div class="research-slot-id-row">
+            <input class="team-slot" id="r-slot-2" placeholder="Slot 2 — Pokémon" list="pkmn-list" />
+            <div class="research-slot-sprite" id="r-sprite-2"></div>
+          </div>
           <div class="research-moves-row">
           <input class="research-move-input" id="r-move-2-1" placeholder="Move 1" list="moves-list" />
           <input class="research-move-input" id="r-move-2-2" placeholder="Move 2" list="moves-list" />
@@ -3608,7 +3653,10 @@
         </div>
         <div class="research-slot-block">
           <input class="nickname-input" id="r-nickname-3" placeholder="Nickname (optional)" />
-          <input class="team-slot" id="r-slot-3" placeholder="Slot 3 — Pokémon" list="pkmn-list" />
+          <div class="research-slot-id-row">
+            <input class="team-slot" id="r-slot-3" placeholder="Slot 3 — Pokémon" list="pkmn-list" />
+            <div class="research-slot-sprite" id="r-sprite-3"></div>
+          </div>
           <div class="research-moves-row">
           <input class="research-move-input" id="r-move-3-1" placeholder="Move 1" list="moves-list" />
           <input class="research-move-input" id="r-move-3-2" placeholder="Move 2" list="moves-list" />
@@ -3646,7 +3694,10 @@
         </div>
         <div class="research-slot-block">
           <input class="nickname-input" id="r-nickname-4" placeholder="Nickname (optional)" />
-          <input class="team-slot" id="r-slot-4" placeholder="Slot 4 — Pokémon" list="pkmn-list" />
+          <div class="research-slot-id-row">
+            <input class="team-slot" id="r-slot-4" placeholder="Slot 4 — Pokémon" list="pkmn-list" />
+            <div class="research-slot-sprite" id="r-sprite-4"></div>
+          </div>
           <div class="research-moves-row">
           <input class="research-move-input" id="r-move-4-1" placeholder="Move 1" list="moves-list" />
           <input class="research-move-input" id="r-move-4-2" placeholder="Move 2" list="moves-list" />
@@ -3684,7 +3735,10 @@
         </div>
         <div class="research-slot-block">
           <input class="nickname-input" id="r-nickname-5" placeholder="Nickname (optional)" />
-          <input class="team-slot" id="r-slot-5" placeholder="Slot 5 — Pokémon" list="pkmn-list" />
+          <div class="research-slot-id-row">
+            <input class="team-slot" id="r-slot-5" placeholder="Slot 5 — Pokémon" list="pkmn-list" />
+            <div class="research-slot-sprite" id="r-sprite-5"></div>
+          </div>
           <div class="research-moves-row">
           <input class="research-move-input" id="r-move-5-1" placeholder="Move 1" list="moves-list" />
           <input class="research-move-input" id="r-move-5-2" placeholder="Move 2" list="moves-list" />
@@ -3722,7 +3776,10 @@
         </div>
         <div class="research-slot-block">
           <input class="nickname-input" id="r-nickname-6" placeholder="Nickname (optional)" />
-          <input class="team-slot" id="r-slot-6" placeholder="Slot 6 — Pokémon" list="pkmn-list" />
+          <div class="research-slot-id-row">
+            <input class="team-slot" id="r-slot-6" placeholder="Slot 6 — Pokémon" list="pkmn-list" />
+            <div class="research-slot-sprite" id="r-sprite-6"></div>
+          </div>
           <div class="research-moves-row">
           <input class="research-move-input" id="r-move-6-1" placeholder="Move 1" list="moves-list" />
           <input class="research-move-input" id="r-move-6-2" placeholder="Move 2" list="moves-list" />
@@ -8217,33 +8274,50 @@ function formatAbilitySlug(slug) {
     .join(' ');
 }
 
-// Fetch abilities from PokéAPI with localStorage cache.
-// Returns array of display-name strings (empty array on any failure).
-async function fetchAbilitiesForPokemon(displayName) {
+// Single underlying fetch — caches the compact {abilities, sprite} blob for
+// each Pokémon. fetchAbilitiesForPokemon and fetchSpriteForPokemon both
+// route through this so we only hit PokéAPI once per species and both
+// consumers (ability filtering + sprite render) share the cache.
+async function fetchPokemonData(displayName) {
   const slug = pokemonNameToSlug(displayName);
-  if (!slug) return [];
-  const cacheKey = `pokeapi-abilities-v2-${slug}`;
+  if (!slug) return null;
+  const cacheKey = `pokeapi-data-v2-${slug}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === 'object') return parsed;
     }
   } catch (e) { /* ignore parse errors */ }
   try {
     const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${slug}`);
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     const data = await res.json();
-    if (!data || !Array.isArray(data.abilities)) return [];
-    const abilities = data.abilities
-      .map(a => (a && a.ability && a.ability.name) || null)
-      .filter(Boolean)
-      .map(formatAbilitySlug);
-    try { localStorage.setItem(cacheKey, JSON.stringify(abilities)); } catch (e) {}
-    return abilities;
+    if (!data || typeof data !== 'object') return null;
+    const compact = {
+      abilities: Array.isArray(data.abilities)
+        ? data.abilities
+            .map(a => (a && a.ability && a.ability.name) || null)
+            .filter(Boolean)
+            .map(formatAbilitySlug)
+        : [],
+      sprite: (data.sprites && data.sprites.front_default) || null,
+    };
+    try { localStorage.setItem(cacheKey, JSON.stringify(compact)); } catch (e) {}
+    return compact;
   } catch (e) {
-    return [];
+    return null;
   }
+}
+
+async function fetchAbilitiesForPokemon(displayName) {
+  const data = await fetchPokemonData(displayName);
+  return (data && data.abilities) || [];
+}
+
+async function fetchSpriteForPokemon(displayName) {
+  const data = await fetchPokemonData(displayName);
+  return (data && data.sprite) || null;
 }
 
 // Populate a single datalist element with the full current-reg ability list.
@@ -8262,7 +8336,10 @@ function renderFullAbilitiesIntoDatalist(datalistEl) {
 const abilityRequestIdBySlot = [0, 0, 0, 0, 0, 0];
 
 // Filter the slot-(idx+1) ability datalist based on the species in slot idx.
+// Also fires the sprite render — both reflect the same species and route
+// through the same PokéAPI cache, so pairing them keeps state in sync.
 function applyAbilityFilterForSlot(idx) {
+  renderSpriteForSlot(idx);
   const dl = document.getElementById(`abilities-list-${idx + 1}`);
   if (!dl) return;
   const monName = ((researchTeam.slots && researchTeam.slots[idx]) || '').trim();
@@ -8297,6 +8374,43 @@ function applyAbilityFilterForSlot(idx) {
 
 function refreshAllAbilityFilters() {
   for (let i = 0; i < 6; i++) applyAbilityFilterForSlot(i);
+}
+
+// Latest-request tracking for sprites — same pattern as the ability filter.
+const spriteRequestIdBySlot = [0, 0, 0, 0, 0, 0];
+
+// Fetch + render the Pokémon's sprite into the slot's sprite container.
+// Silent no-op on partial typing or unknown species; clears to placeholder
+// on empty input or fetch failure.
+function renderSpriteForSlot(idx) {
+  const container = document.getElementById(`r-sprite-${idx + 1}`);
+  if (!container) return;
+  const monName = ((researchTeam.slots && researchTeam.slots[idx]) || '').trim();
+  if (!monName) {
+    container.innerHTML = '';
+    container.classList.remove('has-sprite');
+    return;
+  }
+  const canonical = getCanonicalNames()[normalizeName(monName)];
+  if (!canonical) return;  // partial typing — leave whatever's there
+  const reqId = ++spriteRequestIdBySlot[idx];
+  fetchSpriteForPokemon(canonical).then(url => {
+    if (reqId !== spriteRequestIdBySlot[idx]) return;  // stale; discard
+    if (!url) {
+      container.innerHTML = '';
+      container.classList.remove('has-sprite');
+      return;
+    }
+    container.innerHTML = `<img src="${String(url).replace(/"/g, '&quot;')}" alt="${escapeHtml(canonical)}" loading="lazy">`;
+    container.classList.add('has-sprite');
+  }).catch(() => {
+    container.innerHTML = '';
+    container.classList.remove('has-sprite');
+  });
+}
+
+function refreshAllSpriteSlots() {
+  for (let i = 0; i < 6; i++) renderSpriteForSlot(i);
 }
 
 // Create 6 per-slot ability datalists and rebind each ability input to use
