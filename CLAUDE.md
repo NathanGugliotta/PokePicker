@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A single-file, no-build, vanilla-JS web app for logging competitive Pokémon Champions VGC matches. The entire app — HTML, CSS, JS, embedded reference data — lives in `index.html` (~225 KB, ~6.5k lines). Source lives at https://github.com/NathanGugliotta/PokePicker; deploys to https://nathangugliotta.github.io/PokePicker/ via GitHub Pages auto-build on every push to `main` (no CI step, the repo root *is* the published site). Used on iPad and Mac Safari; designed to also work as an iOS home-screen standalone app.
 
-Built by and for Nathan, a competitive VGC player and senior trademark attorney — knows the game deeply, newer to web dev. Explain dev concepts (Git, modules, build steps) when introducing them; don't over-explain things he clearly already gets. He has ADHD and gets overwhelmed by jargon — keep technical terms grounded.
+Built by and for Nathan, a competitive VGC player and senior trademark attorney — knows the game deeply, newer to web dev. Explain dev concepts (Git, modules, build steps) when introducing them; don't over-explain things he clearly already gets. Keep technical terms grounded.
 
-There is no `package.json`, bundler, test suite, or lint config in this folder. The parent directory is an Obsidian vault — this folder is a self-contained code project inside it and does not inherit the vault's note-writing conventions.
+There is no `package.json`, bundler, test suite, or lint config in this folder. It is a self-contained code project.
 
 ## About Pokémon Champions (critical — do NOT assume Scarlet & Violet mechanics)
 
@@ -151,4 +151,3 @@ Avoid:
 
 - Live app: https://nathangugliotta.github.io/PokePicker/
 - Deploy: `git push` to `main` (GitHub Pages auto-builds from repo root)
-- Parent vault: `/Users/nathangugliotta/Documents/Gugliotta & Gugliotta, LPA/` (this app sits under `1 Areas/Poke Picker App/`)
